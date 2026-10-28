@@ -99,11 +99,15 @@ export function getPublicBaseUrl(req?: Request): string {
     return envUrl.trim().replace(/\/$/, '');
   }
 
-  // 2. Dynamic host detection from incoming HTTP request (e.g. phone accessing via http://192.168.x.x:3000)
+  // 2. Dynamic host detection from incoming HTTP request
   if (req) {
     const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
     const rawHost = (req.headers['x-forwarded-host'] as string) || req.get('host');
     if (rawHost) {
+      // If deployed on Render and no custom APP_URL is set, point QR verification to Vercel frontend
+      if (rawHost.includes('onrender.com')) {
+        return (process.env.FRONTEND_URL || 'https://certificate-qr-verifications.vercel.app').replace(/\/$/, '');
+      }
       const detected = `${protocol}://${rawHost}`.replace(/\/$/, '');
       // If detected host is a LAN IP or custom domain, prefer it
       if (!isLocalhostUrl(detected)) {

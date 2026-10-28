@@ -16,7 +16,7 @@ import {
 import { Certificate } from '../types/index.js';
 import { generateQrDataUrl } from '../../server/qr.js';
 import { formatDateHumanReadable, formatDateToIndianStandard } from '../../server/validation.js';
-import { fetchServerConfig, getAppVerificationBaseUrl } from '../services/api.js';
+import { fetchServerConfig, getAppVerificationBaseUrl, getCertificateDownloadUrl } from '../services/api.js';
 
 interface CertificateDetailModalProps {
   certificate: Certificate | null;
@@ -255,7 +255,7 @@ export const CertificateDetailModal: React.FC<CertificateDetailModalProps> = ({
             
             {/* Download PDF */}
             <a
-              href={`/api/download/${cleanNum}`}
+              href={getCertificateDownloadUrl(cleanNum)}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"

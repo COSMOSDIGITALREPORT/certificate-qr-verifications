@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { api } from '../services/api.js';
+import { api, getCertificateDownloadUrl } from '../services/api.js';
 import { Certificate } from '../types/index.js';
 import { formatDateHumanReadable, formatDateToIndianStandard } from '../../server/validation.js';
 
@@ -218,7 +218,7 @@ export const CertificateTable: React.FC<CertificateTableProps> = ({
 
                           {/* Download PDF */}
                           <a
-                            href={`/api/download/${cleanNum}`}
+                            href={getCertificateDownloadUrl(cleanNum)}
                             target="_blank"
                             rel="noreferrer"
                             title="Download PDF"

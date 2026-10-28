@@ -9,7 +9,7 @@ import {
   FileCheck,
   Download,
 } from 'lucide-react';
-import { api } from '../services/api.js';
+import { api, getCertificateDownloadUrl } from '../services/api.js';
 
 export const TemplateSettings: React.FC = () => {
   const [templateInfo, setTemplateInfo] = useState<{
@@ -162,7 +162,7 @@ export const TemplateSettings: React.FC = () => {
           </p>
 
           <a
-            href="/api/download/26832"
+            href={getCertificateDownloadUrl('26832')}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"

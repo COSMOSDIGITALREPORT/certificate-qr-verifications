@@ -16,7 +16,7 @@ import {
   RefreshCw,
   QrCode,
 } from 'lucide-react';
-import { api } from '../services/api.js';
+import { api, getCertificateDownloadUrl } from '../services/api.js';
 import { DashboardMetrics, Certificate } from '../types/index.js';
 import { formatDateHumanReadable, formatDateToIndianStandard } from '../../server/validation.js';
 
@@ -233,7 +233,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           View
                         </button>
                         <a
-                          href={`/api/download/${cert.certificateNumber.replace(/[^a-zA-Z0-9]/g, '')}`}
+                          href={getCertificateDownloadUrl(cert.certificateNumber)}
                           target="_blank"
                           rel="noreferrer"
                           className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"

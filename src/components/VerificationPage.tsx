@@ -26,7 +26,7 @@ import {
   UserCheck,
   FileBadge2,
 } from 'lucide-react';
-import { api } from '../services/api.js';
+import { api, getCertificateDownloadUrl } from '../services/api.js';
 import { PublicVerificationResult } from '../types/index.js';
 import { formatDateHumanReadable, formatDateToIndianStandard } from '../../server/validation.js';
 
@@ -481,7 +481,7 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
             {/* E. Certificate Download & Action Buttons */}
             <div className="space-y-2.5 pt-1">
               <a
-                href={`/api/download/${result.certificate?.certificateNumber.replace(/[^a-zA-Z0-9]/g, '')}`}
+                href={getCertificateDownloadUrl(result.certificate?.certificateNumber)}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all cursor-pointer"

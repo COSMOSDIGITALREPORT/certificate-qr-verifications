@@ -92,7 +92,20 @@ async function startServer() {
       const distPath = path.resolve(__dirname, 'dist');
       app.use(express.static(distPath));
 
-      app.get('*', (_req, res) => {
+      app.get('*', (req, res) => {
+        const configuredFrontend =
+          process.env.APP_URL ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          process.env.PUBLIC_BASE_URL ||
+          process.env.FRONTEND_URL ||
+          'https://certificate-qr-verifications.vercel.app';
+
+        // Auto-redirect web requests (such as scanned QR /verify/... links) to Vercel
+        if (req.path.startsWith('/verify') || req.path.startsWith('/admin') || !req.path.startsWith('/api')) {
+          const targetUrl = `${configuredFrontend.replace(/\/$/, '')}${req.originalUrl}`;
+          return res.redirect(302, targetUrl);
+        }
+
         const indexPath = path.resolve(distPath, 'index.html');
         if (fs.existsSync(indexPath)) {
           res.sendFile(indexPath);
@@ -100,6 +113,7 @@ async function startServer() {
           res.status(200).json({
             status: 'online',
             service: 'Cosmogeek Certificate QR API Backend',
+            frontendUrl: configuredFrontend,
             message: 'Backend is running successfully! Frontend is hosted on Vercel.'
           });
         }

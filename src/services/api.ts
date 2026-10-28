@@ -14,11 +14,18 @@ import {
 const TOKEN_STORAGE_KEY = 'cg_admin_session_token';
 
 // Configurable backend API base URL (defaults to relative '/' on same host/port)
-const API_BASE_URL = (
+export const API_BASE_URL = (
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
   (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_API_URL) ||
   ''
 ).replace(/\/$/, '');
+
+export function getCertificateDownloadUrl(certificateNumber?: string | null, regenerate = false): string {
+  if (!certificateNumber) return '#';
+  const cleanNum = certificateNumber.replace(/[^a-zA-Z0-9]/g, '');
+  const base = API_BASE_URL || '';
+  return `${base}/api/download/${cleanNum}${regenerate ? '?regenerate=true' : ''}`;
+}
 
 export function getAppVerificationBaseUrl(): string {
   const envUrl = (
