@@ -1,0 +1,25 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Local SQLite databases
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Generated certificates containing private student data
+storage/certificates/*
+!storage/certificates/.gitkeep
+
+# Playwright artifacts & temp files
+.playwright-cli/
+tmp/
+.aistudio/
+.gemini/
+
