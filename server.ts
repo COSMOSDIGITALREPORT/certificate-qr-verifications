@@ -97,7 +97,11 @@ async function startServer() {
         if (fs.existsSync(indexPath)) {
           res.sendFile(indexPath);
         } else {
-          res.status(404).send('Build artifacts not found. Please run npm run build.');
+          res.status(200).json({
+            status: 'online',
+            service: 'Cosmogeek Certificate QR API Backend',
+            message: 'Backend is running successfully! Frontend is hosted on Vercel.'
+          });
         }
       });
     }
