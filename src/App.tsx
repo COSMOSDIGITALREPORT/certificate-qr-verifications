@@ -34,7 +34,7 @@ export default function App() {
     if (path.startsWith('/verify/')) {
       const parts = path.split('/verify/');
       if (parts[1]) {
-        setActiveVerificationId(decodeURIComponent(parts[1]));
+        setActiveVerificationId(decodeURIComponent(parts[1]).replace(/\/$/, '').trim());
         setCurrentTab('verify');
       }
     } else if (path === '/verify') {

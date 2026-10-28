@@ -52,6 +52,30 @@ app.use(cookieParser());
 // Mount API routes
 app.use('/api', apiRouter);
 
+// Immediate redirect for QR code scans (/verify/...) directly to Vercel frontend
+app.get(['/verify', '/verify/:verificationId', '/verify/*'], (req, res) => {
+  const frontendUrl = (
+    process.env.APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.FRONTEND_URL ||
+    'https://certificate-qr-verifications.vercel.app'
+  ).replace(/\/$/, '');
+  const target = `${frontendUrl}${req.originalUrl}`;
+  console.log(`[Cosmogeek Redirect] Forwarding ${req.originalUrl} -> ${target}`);
+  return res.redirect(302, target);
+});
+
+// Immediate redirect for /admin to Vercel frontend
+app.get(['/admin', '/admin/*'], (req, res) => {
+  const frontendUrl = (
+    process.env.APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.FRONTEND_URL ||
+    'https://certificate-qr-verifications.vercel.app'
+  ).replace(/\/$/, '');
+  return res.redirect(302, `${frontendUrl}${req.originalUrl}`);
+});
+
 async function startServer() {
   try {
     // Initialize SQLite database and master template

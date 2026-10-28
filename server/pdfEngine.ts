@@ -29,6 +29,15 @@ export function resolveEffectiveBaseUrl(providedUrl?: string): string {
     return str.includes('localhost') || str.includes('127.0.0.1') || str.includes('0.0.0.0') || str.includes('::1');
   };
 
+  if (providedUrl && providedUrl.includes('onrender.com')) {
+    const frontend =
+      process.env.APP_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.FRONTEND_URL ||
+      'https://certificate-qr-verifications.vercel.app';
+    return frontend.trim().replace(/\/$/, '');
+  }
+
   if (providedUrl && !isLocalhost(providedUrl)) {
     return providedUrl.trim().replace(/\/$/, '');
   }
