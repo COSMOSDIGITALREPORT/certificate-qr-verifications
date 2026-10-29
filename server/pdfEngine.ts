@@ -63,8 +63,10 @@ export function resolveEffectiveBaseUrl(providedUrl?: string): string {
 
 const TEMPLATES_DIR = path.resolve(process.cwd(), 'templates');
 const TEMPLATE_FILE = path.join(TEMPLATES_DIR, 'certificate-template.pdf');
+const SIGNATURE_FILE = path.join(TEMPLATES_DIR, 'director-signature.png');
 const STORAGE_DIR = path.resolve(process.cwd(), 'storage/certificates');
 const UPLOADED_TEMPLATE_SOURCE = path.resolve(process.cwd(), 'public/assets/aistudio/Yuvraj_-_CERTIFICATE_70672610.pdf');
+const FALLBACK_SIGNATURE_SOURCE = path.resolve(process.cwd(), 'public/assets/director-signature.png');
 
 // Default Dimensions
 const A4_WIDTH = 841.89; // pt
@@ -79,6 +81,13 @@ const A4_HEIGHT = 595.28; // pt
 export async function ensureMasterTemplateExists(): Promise<string> {
   if (!fs.existsSync(TEMPLATES_DIR)) {
     fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
+  }
+
+  // Ensure director signature exists in templates directory
+  if (fs.existsSync(FALLBACK_SIGNATURE_SOURCE) && !fs.existsSync(SIGNATURE_FILE)) {
+    try {
+      fs.copyFileSync(FALLBACK_SIGNATURE_SOURCE, SIGNATURE_FILE);
+    } catch {}
   }
 
   // If user provided the source PDF, copy it to templates/certificate-template.pdf if not already identical
@@ -358,6 +367,28 @@ export async function generateCertificatePdf(
       font: fontBold,
       color: tealAccent,
     });
+
+    // 8. Embed Director's Digital Signature directly above "Anirudh Hatwar"
+    let sigBuffer: Buffer | null = null;
+    if (fs.existsSync(SIGNATURE_FILE)) {
+      sigBuffer = fs.readFileSync(SIGNATURE_FILE);
+    } else if (fs.existsSync(FALLBACK_SIGNATURE_SOURCE)) {
+      sigBuffer = fs.readFileSync(FALLBACK_SIGNATURE_SOURCE);
+    }
+
+    if (sigBuffer) {
+      try {
+        const embeddedSig = await pdfDoc.embedPng(sigBuffer);
+        page.drawImage(embeddedSig, {
+          x: 224,
+          y: 84,
+          width: 62,
+          height: 38.8,
+        });
+      } catch (err) {
+        console.warn('[Cosmogeek PDF Engine] Could not embed director signature:', err);
+      }
+    }
   } else {
     // ---------------------------------------------------------------
     // FALLBACK A4 LANDSCAPE PLACEMENT (841.89 x 595.28 pt)
@@ -402,6 +433,25 @@ export async function generateCertificatePdf(
     const qrBuffer = await generateQrPngBuffer(verificationUrl, 260);
     const embeddedQrImage = await pdfDoc.embedPng(qrBuffer);
     page.drawImage(embeddedQrImage, { x: (width - 86) / 2, y: 64, width: 86, height: 86 });
+
+    // Director signature for fallback template
+    let sigBuffer: Buffer | null = null;
+    if (fs.existsSync(SIGNATURE_FILE)) {
+      sigBuffer = fs.readFileSync(SIGNATURE_FILE);
+    } else if (fs.existsSync(FALLBACK_SIGNATURE_SOURCE)) {
+      sigBuffer = fs.readFileSync(FALLBACK_SIGNATURE_SOURCE);
+    }
+    if (sigBuffer) {
+      try {
+        const embeddedSig = await pdfDoc.embedPng(sigBuffer);
+        page.drawImage(embeddedSig, {
+          x: width - 260,
+          y: 95,
+          width: 90,
+          height: 56.3,
+        });
+      } catch {}
+    }
   }
 
   // Save generated PDF to storage directory
