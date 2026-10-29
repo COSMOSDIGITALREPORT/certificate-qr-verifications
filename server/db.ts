@@ -18,6 +18,7 @@ import {
   getCertificateByVerificationIdMongo,
   getCertificateByNumberMongo,
   getNextCertificateNumberMongo,
+  getAllCertificateNumbersMongo,
   insertCertificateMongo,
   updateCertificateMongo,
   revokeCertificateMongo,
@@ -276,7 +277,7 @@ function rowToCertificate(row: Record<string, any>): Certificate {
   };
 }
 
-function getAllCertificatesSqliteSync(db: SqlJsDatabase): Certificate[] {
+export function getAllCertificatesSqliteSync(db: SqlJsDatabase): Certificate[] {
   const stmt = db.prepare('SELECT * FROM certificates ORDER BY createdAt DESC');
   const certificates: Certificate[] = [];
   while (stmt.step()) {
@@ -442,43 +443,61 @@ export async function getCertificateByNumber(certNumber: string): Promise<Certif
 export const STARTING_CERTIFICATE_NUMBER = 26847;
 
 export async function getNextCertificateNumber(): Promise<string> {
+  const existingNumbers = new Set<string>();
+
+  // 1. Gather existing numbers from MongoDB Atlas
   if (isMongoConnected()) {
     try {
-      return await getNextCertificateNumberMongo();
+      const mongoNumbers = await getAllCertificateNumbersMongo();
+      for (const num of mongoNumbers) {
+        const raw = String(num || '').trim();
+        if (raw) {
+          existingNumbers.add(raw);
+          const clean = raw.replace(/[^0-9]/g, '');
+          if (clean) {
+            existingNumbers.add(clean);
+            existingNumbers.add(`#${clean}`);
+          }
+        }
+      }
     } catch (err) {
-      console.warn('[Cosmogeek MongoDB] Query failed, falling back to SQLite:', err);
+      console.warn('[Cosmogeek MongoDB] Query numbers failed, continuing with SQLite:', err);
     }
   }
 
-  const db = await getDatabase();
-  const stmt = db.prepare('SELECT certificateNumber FROM certificates');
-  const existingNumbers = new Set<string>();
-  let maxInSeries = STARTING_CERTIFICATE_NUMBER - 1;
-
-  while (stmt.step()) {
-    const raw = String(stmt.getAsObject().certificateNumber || '').trim();
-    if (raw) {
-      existingNumbers.add(raw);
-      const clean = raw.replace(/[^0-9]/g, '');
-      if (clean) {
-        existingNumbers.add(clean);
-        existingNumbers.add(`#${clean}`);
+  // 2. Gather existing numbers from local SQLite database
+  try {
+    const db = await getDatabase();
+    const stmt = db.prepare('SELECT certificateNumber FROM certificates');
+    while (stmt.step()) {
+      const raw = String(stmt.getAsObject().certificateNumber || '').trim();
+      if (raw) {
+        existingNumbers.add(raw);
+        const clean = raw.replace(/[^0-9]/g, '');
+        if (clean) {
+          existingNumbers.add(clean);
+          existingNumbers.add(`#${clean}`);
+        }
       }
+    }
+    stmt.free();
+  } catch (err) {
+    console.warn('[Cosmogeek SQLite] Query numbers failed:', err);
+  }
 
-      // Track pure numeric certificate numbers in the continuous series (>= 26847 and < 31000)
-      // ignoring legacy test anomalies (e.g. 31000s, 80000s, or prefixed codes)
-      const match = raw.match(/^#?(\d+)$/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (!isNaN(num) && num >= STARTING_CERTIFICATE_NUMBER && num < 31000) {
-          if (num > maxInSeries) {
-            maxInSeries = num;
-          }
+  // Track pure numeric certificate numbers in the active series (>= STARTING_CERTIFICATE_NUMBER and < 31000)
+  let maxInSeries = STARTING_CERTIFICATE_NUMBER - 1;
+  for (const item of existingNumbers) {
+    const match = item.match(/^#?(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num >= STARTING_CERTIFICATE_NUMBER && num < 31000) {
+        if (num > maxInSeries) {
+          maxInSeries = num;
         }
       }
     }
   }
-  stmt.free();
 
   let candidate = Math.max(STARTING_CERTIFICATE_NUMBER, maxInSeries + 1);
   while (existingNumbers.has(`#${candidate}`) || existingNumbers.has(String(candidate))) {
@@ -503,20 +522,13 @@ export async function insertCertificate(cert: Certificate): Promise<Certificate>
   }
   stmtCheck.free();
 
-  // 2. Ensure MongoDB connection if MONGODB_URI is configured
+  // 2. Ensure MongoDB connection
   await ensureMongoConnected();
 
   let mongoSaved: Certificate | null = null;
-  const uri = process.env.MONGODB_URI?.trim();
   const isTest = process.env.NODE_ENV === 'test' || Boolean(process.env.NODE_TEST_CONTEXT);
 
-  if (uri && !isTest) {
-    if (!isMongoConnected()) {
-      const health = getMongoHealth();
-      const reason = health.error || 'Connection could not be established';
-      throw new Error(`Failed to connect to MongoDB Atlas (DB: certificateDB, Collection: students): ${reason}. Please verify MONGODB_URI and IP access in MongoDB Atlas.`);
-    }
-
+  if (isMongoConnected() && !isTest) {
     try {
       mongoSaved = await insertCertificateMongo(cert);
       console.log(`[Cosmogeek MongoDB] ✓ Student certificate ${cert.certificateNumber} (${cert.recipientName}) successfully saved to MongoDB Atlas collection "students".`);
@@ -524,7 +536,7 @@ export async function insertCertificate(cert: Certificate): Promise<Certificate>
       console.error('[Cosmogeek MongoDB Error] Failed to insert student record into MongoDB Atlas:', err);
       throw err;
     }
-  } else if (uri && isTest && isMongoConnected()) {
+  } else if (isTest && isMongoConnected()) {
     try {
       mongoSaved = await insertCertificateMongo(cert);
     } catch (err) {

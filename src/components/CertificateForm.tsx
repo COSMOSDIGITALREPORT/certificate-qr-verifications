@@ -120,6 +120,10 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
       onSuccess(result.certificate);
     } catch (err: any) {
       setError(err?.message || 'Failed to issue certificate. Please check input fields.');
+      try {
+        const num = await api.getNextCertificateNumber();
+        setNextNumber(num);
+      } catch {}
     } finally {
       setSubmitting(false);
     }

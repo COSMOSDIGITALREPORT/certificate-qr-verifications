@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { apiRouter } from './server/routes.js';
-import { getDatabase, getAllCertificates } from './server/db.js';
+import { getDatabase, getAllCertificates, getAllCertificatesSqliteSync } from './server/db.js';
 import { connectMongoDB, isMongoConnected, migrateSqliteToMongo } from './server/mongodb.js';
 import { ensureMasterTemplateExists } from './server/pdfEngine.js';
 
@@ -87,9 +87,10 @@ async function startServer() {
     if (mongoOk) {
       // Sync any existing SQLite certificates to MongoDB Atlas students collection
       try {
-        const { certificates } = await getAllCertificates({ limit: 1000 });
-        if (certificates.length > 0) {
-          await migrateSqliteToMongo(certificates);
+        const db = await getDatabase();
+        const sqliteCerts = getAllCertificatesSqliteSync(db);
+        if (sqliteCerts.length > 0) {
+          await migrateSqliteToMongo(sqliteCerts);
         }
       } catch (err) {
         console.warn('[Cosmogeek] Initial migration notice:', err);

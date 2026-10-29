@@ -314,7 +314,18 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
   const baseUrl = getPublicBaseUrl(req);
 
   try {
-    const certificateNumber = await getNextCertificateNumber();
+    let certificateNumber = await getNextCertificateNumber();
+
+    // Absolute uniqueness assurance: verify candidate is not in MongoDB Atlas or SQLite
+    let candidateDigits = parseInt(certificateNumber.replace(/[^0-9]/g, ''), 10);
+    while (
+      (await getCertificateByNumber(certificateNumber)) ||
+      (await getCertificateByNumber(`#${candidateDigits}`))
+    ) {
+      candidateDigits++;
+      certificateNumber = `#${candidateDigits}`;
+    }
+
     const cleanNum = certificateNumber.replace(/[^0-9]/g, '');
     const randomSuffix = crypto.randomBytes(3).toString('hex');
     const verificationId = `cg-${cleanNum}-${randomSuffix}`;

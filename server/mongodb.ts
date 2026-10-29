@@ -356,6 +356,11 @@ export async function getCertificateByNumberMongo(certificateNumber: string): Pr
 
 export const STARTING_CERTIFICATE_NUMBER = 26847;
 
+export async function getAllCertificateNumbersMongo(): Promise<string[]> {
+  const docs = await StudentCertificateModel.find({}, { certificateNumber: 1 }).lean();
+  return docs.map((d) => String(d.certificateNumber || ''));
+}
+
 export async function getNextCertificateNumberMongo(): Promise<string> {
   const docs = await StudentCertificateModel.find({}, { certificateNumber: 1 }).lean();
   const existingNumbers = new Set<string>();
