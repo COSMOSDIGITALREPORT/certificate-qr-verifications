@@ -30,13 +30,16 @@ test('Database initializes and seeds default admin and reference certificate', a
   assert.ok(db, 'Database must be initialized');
 
   // Verify admin
-  const admin = await getAdminByUsername('admin');
-  assert.ok(admin, 'Default admin must exist');
-  assert.equal(admin?.username, 'admin');
+  const targetUsername = process.env.ADMIN_DEFAULT_USERNAME || 'Anirudh Hatwar';
+  const admin = await getAdminByUsername(targetUsername);
+  assert.ok(admin, `Default admin (${targetUsername}) must exist`);
+  assert.equal(admin?.username.toLowerCase(), targetUsername.toLowerCase());
 
   // Verify password hash
-  const defaultPass = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@Cosmogeek2026!';
-  assert.ok(bcrypt.compareSync(defaultPass, admin.passwordHash), 'Admin password must match');
+  const defaultPass = process.env.ADMIN_DEFAULT_PASSWORD;
+  if (defaultPass) {
+    assert.ok(bcrypt.compareSync(defaultPass, admin.passwordHash), 'Admin password must match');
+  }
   assert.equal(bcrypt.compareSync('WrongPassword', admin.passwordHash), false, 'Wrong password must be rejected');
 
   // Verify reference certificate #26832 for Yuvraj Dhumale
@@ -88,10 +91,9 @@ test('Rate limiting tracks failed login attempts and blocks after threshold', ()
 });
 
 test('Certificate revocation updates status and prevents valid display', async () => {
-  const uniqueNum = await getNextCertificateNumber();
   const testCert: Certificate = {
     id: `test_revoke_${Date.now()}`,
-    certificateNumber: uniqueNum,
+    certificateNumber: `#REV-${Date.now().toString().slice(-5)}`,
     verificationId: `cg-rev-test-${Date.now()}`,
     recipientName: 'Revocation Test Recipient',
     designation: 'Backend Intern',

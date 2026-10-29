@@ -17,8 +17,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
   onLoginSuccess,
   onGoToPublicVerification,
 }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Admin@Cosmogeek2026!');
+  const [username, setUsername] = useState('Anirudh Hatwar');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +28,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
     setLoading(true);
 
     try {
-      const res = await api.login(username, password);
+      const res = await api.login(username.trim(), password);
       if (res.success && res.user) {
         onLoginSuccess(res.user);
       } else {
@@ -39,12 +39,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDefaults = () => {
-    setUsername('admin');
-    setPassword('Admin@Cosmogeek2026!');
-    setError(null);
   };
 
   return (
@@ -94,7 +88,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Anirudh Hatwar"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-50 transition-all"
                 />
               </div>
@@ -135,17 +129,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
               )}
             </button>
           </form>
-
-          {/* Quick Prefill for Testing */}
-          <div className="pt-2 border-t border-slate-100 text-center">
-            <button
-              type="button"
-              onClick={fillDefaults}
-              className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 underline underline-offset-2 cursor-pointer"
-            >
-              Load Default Admin Credentials (admin / Admin@Cosmogeek2026!)
-            </button>
-          </div>
         </div>
 
         {/* Link to Public Verification */}

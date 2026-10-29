@@ -189,11 +189,10 @@ apiRouter.post('/auth/login', async (req: Request, res: Response): Promise<void>
   const { username, password } = parseResult.data;
   const admin = await getAdminByUsername(username);
 
-  const envPass = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@Cosmogeek2026!';
+  const envPass = process.env.ADMIN_DEFAULT_PASSWORD;
   const isMatch = admin && (
     bcrypt.compareSync(password, admin.passwordHash) ||
-    password === envPass ||
-    password === 'Admin@Cosmogeek2026!'
+    (Boolean(envPass) && password === envPass)
   );
 
   if (!admin || !isMatch) {

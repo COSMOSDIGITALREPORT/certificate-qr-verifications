@@ -508,7 +508,11 @@ export async function getDashboardMetricsMongo(): Promise<DashboardMetrics> {
 }
 
 export async function getAdminByUsernameMongo(username: string): Promise<AdminUser & { passwordHash: string } | null> {
-  const doc = await AdminModel.findOne({ username }).lean();
+  const clean = username.trim();
+  const escaped = clean.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const doc = await AdminModel.findOne({
+    username: { $regex: new RegExp(`^${escaped}$`, 'i') },
+  }).lean();
   if (!doc) return null;
   return {
     id: doc.id,
@@ -544,6 +548,53 @@ export async function saveAdminMongo(admin: { id: string; username: string; pass
     },
     { upsert: true }
   );
+}
+
+/**
+ * Synchronizes or updates the primary admin credentials in MongoDB Atlas
+ * Preserves the primary admin id ('admin_init_1') so active sessions remain valid.
+ */
+export async function syncDefaultAdminMongo(targetUsername: string, targetPasswordHash: string): Promise<void> {
+  if (!isMongoConnected()) return;
+
+  const cleanUser = targetUsername.trim();
+  const now = new Date();
+
+  // Find primary admin or any existing admin record
+  const escaped = cleanUser.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const existing = await AdminModel.findOne({
+    $or: [
+      { id: 'admin_init_1' },
+      { username: 'admin' },
+      { username: { $regex: new RegExp(`^${escaped}$`, 'i') } },
+    ],
+  });
+
+  if (existing) {
+    existing.id = 'admin_init_1';
+    existing.username = cleanUser;
+    existing.passwordHash = targetPasswordHash;
+    existing.updatedAt = now;
+    await existing.save();
+    console.log(`[Cosmogeek MongoDB] ✓ Synchronized admin account "${cleanUser}" in MongoDB Atlas.`);
+  } else {
+    await AdminModel.create({
+      id: 'admin_init_1',
+      username: cleanUser,
+      passwordHash: targetPasswordHash,
+      createdAt: now,
+      updatedAt: now,
+    });
+    console.log(`[Cosmogeek MongoDB] ✓ Created default admin "${cleanUser}" in MongoDB Atlas.`);
+  }
+
+  // Safely clean up any leftover orphan document with username 'admin' that isn't 'admin_init_1'
+  if (cleanUser.toLowerCase() !== 'admin') {
+    await AdminModel.deleteMany({
+      username: 'admin',
+      id: { $ne: 'admin_init_1' },
+    });
+  }
 }
 
 /**

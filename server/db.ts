@@ -25,6 +25,7 @@ import {
   getAdminByUsernameMongo,
   getAdminByIdMongo,
   saveAdminMongo,
+  syncDefaultAdminMongo,
   migrateSqliteToMongo,
 } from './mongodb.js';
 
@@ -131,31 +132,48 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
     dbInstance.run('ALTER TABLE certificates ADD COLUMN verificationUrl TEXT;');
   } catch {}
 
-  // Seed default admin if none exists
-  const adminCheck = dbInstance.exec('SELECT count(*) as count FROM admins');
-  const adminCount = (adminCheck[0]?.values[0]?.[0] as number) || 0;
-
-  const defaultUsername = process.env.ADMIN_DEFAULT_USERNAME || 'admin';
-  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin@Cosmogeek2026!';
+  // Synchronize or seed default admin in SQLite
+  const defaultUsername = (process.env.ADMIN_DEFAULT_USERNAME || 'Anirudh Hatwar').trim();
+  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
   const now = new Date().toISOString();
 
-  if (adminCount === 0) {
-    const passwordHash = bcrypt.hashSync(defaultPassword, 10);
+  const stmtAdmin = dbInstance.prepare(
+    'SELECT id, username, passwordHash FROM admins WHERE id = :id OR username = :oldUser OR LOWER(TRIM(username)) = LOWER(:newUser) LIMIT 1'
+  );
+  stmtAdmin.bind({ ':id': 'admin_init_1', ':oldUser': 'admin', ':newUser': defaultUsername });
+
+  let effectiveHash = '';
+  if (stmtAdmin.step()) {
+    const row = stmtAdmin.getAsObject();
+    stmtAdmin.free();
+    const existingId = String(row.id || 'admin_init_1');
+    effectiveHash = String(row.passwordHash || '');
+    const usernameMatches = String(row.username).trim().toLowerCase() === defaultUsername.toLowerCase();
+
+    let shouldUpdate = !usernameMatches;
+    if (defaultPassword && !bcrypt.compareSync(defaultPassword, effectiveHash)) {
+      effectiveHash = bcrypt.hashSync(defaultPassword, 10);
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      dbInstance.run(
+        'UPDATE admins SET id = ?, username = ?, passwordHash = ?, updatedAt = ? WHERE id = ? OR username = ? OR LOWER(TRIM(username)) = LOWER(?)',
+        ['admin_init_1', defaultUsername, effectiveHash, now, existingId, 'admin', defaultUsername]
+      );
+    }
+  } else {
+    stmtAdmin.free();
+    effectiveHash = defaultPassword ? bcrypt.hashSync(defaultPassword, 10) : '';
     dbInstance.run(
       'INSERT INTO admins (id, username, passwordHash, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-      ['admin_init_1', defaultUsername, passwordHash, now, now]
+      ['admin_init_1', defaultUsername, effectiveHash, now, now]
     );
-  } else if (process.env.ADMIN_DEFAULT_PASSWORD) {
-    const stmt = dbInstance.prepare('SELECT passwordHash FROM admins WHERE username = :username');
-    stmt.bind({ ':username': defaultUsername });
-    if (stmt.step()) {
-      const currentHash = String(stmt.getAsObject().passwordHash);
-      if (!bcrypt.compareSync(defaultPassword, currentHash)) {
-        const newHash = bcrypt.hashSync(defaultPassword, 10);
-        dbInstance.run('UPDATE admins SET passwordHash = ?, updatedAt = ? WHERE username = ?', [newHash, now, defaultUsername]);
-      }
-    }
-    stmt.free();
+  }
+
+  // Ensure no orphan admin records with outdated username
+  if (defaultUsername.toLowerCase() !== 'admin') {
+    dbInstance.run("DELETE FROM admins WHERE username = 'admin' AND id != 'admin_init_1'");
   }
 
   // Seed sample initial certificate from prompt if none exists
@@ -210,10 +228,9 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
       const allSqliteCerts = getAllCertificatesSqliteSync(dbInstance);
       await migrateSqliteToMongo(allSqliteCerts);
 
-      // Also sync default admin
-      const admin = await getAdminByUsernameSqlite(dbInstance, defaultUsername);
-      if (admin) {
-        await saveAdminMongo(admin);
+      // Also sync admin to MongoDB Atlas
+      if (effectiveHash) {
+        await syncDefaultAdminMongo(defaultUsername, effectiveHash);
       }
     } catch (err) {
       console.warn('[Cosmogeek] Auto-sync to MongoDB Atlas encountered an error:', err);
@@ -270,8 +287,9 @@ function getAllCertificatesSqliteSync(db: SqlJsDatabase): Certificate[] {
 }
 
 async function getAdminByUsernameSqlite(db: SqlJsDatabase, username: string) {
-  const stmt = db.prepare('SELECT * FROM admins WHERE username = :username');
-  stmt.bind({ ':username': username });
+  const clean = username.trim();
+  const stmt = db.prepare('SELECT * FROM admins WHERE LOWER(TRIM(username)) = LOWER(:username)');
+  stmt.bind({ ':username': clean });
   if (stmt.step()) {
     const row = stmt.getAsObject();
     stmt.free();
