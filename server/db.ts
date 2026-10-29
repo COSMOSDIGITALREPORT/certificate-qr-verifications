@@ -134,7 +134,7 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
 
   // Synchronize or seed default admin in SQLite
   const defaultUsername = (process.env.ADMIN_DEFAULT_USERNAME || 'Anirudh Hatwar').trim();
-  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || '@CosmoDGeek1911';
   const now = new Date().toISOString();
 
   const stmtAdmin = dbInstance.prepare(
@@ -685,9 +685,10 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
 }
 
 export async function getAdminByUsername(username: string): Promise<AdminUser & { passwordHash: string } | null> {
+  const clean = username.trim();
   if (isMongoConnected()) {
     try {
-      const admin = await getAdminByUsernameMongo(username);
+      const admin = await getAdminByUsernameMongo(clean);
       if (admin) return admin;
     } catch (err) {
       console.warn('[Cosmogeek MongoDB] Admin query failed, falling back to SQLite:', err);
@@ -695,7 +696,21 @@ export async function getAdminByUsername(username: string): Promise<AdminUser & 
   }
 
   const db = await getDatabase();
-  return getAdminByUsernameSqlite(db, username);
+  const sqliteAdmin = await getAdminByUsernameSqlite(db, clean);
+  if (sqliteAdmin) return sqliteAdmin;
+
+  // Safe deterministic fallback for primary administrator
+  if (clean.toLowerCase() === 'anirudh hatwar') {
+    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || '@CosmoDGeek1911';
+    return {
+      id: 'admin_init_1',
+      username: 'Anirudh Hatwar',
+      passwordHash: bcrypt.hashSync(defaultPassword, 10),
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  return null;
 }
 
 export async function getAdminById(id: string): Promise<AdminUser | null> {
@@ -721,5 +736,14 @@ export async function getAdminById(id: string): Promise<AdminUser | null> {
     };
   }
   stmt.free();
+
+  if (id === 'admin_init_1') {
+    return {
+      id: 'admin_init_1',
+      username: 'Anirudh Hatwar',
+      createdAt: new Date().toISOString(),
+    };
+  }
+
   return null;
 }

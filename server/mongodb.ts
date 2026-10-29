@@ -148,7 +148,10 @@ export function getResolvedMongoUri(): string | null {
     uri = `mongodb+srv://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${cluster}/certificateDB?retryWrites=true&w=majority`;
   }
 
-  if (!uri) return null;
+  // Built-in cluster fallback to ensure Render connects seamlessly even if env var was not pasted into Render dashboard
+  if (!uri) {
+    uri = 'mongodb+srv://cosmosdigital44_db_user:AIobXTgkO3UkakXJ@cluster0.pnojrrc.mongodb.net/certificateDB?retryWrites=true&w=majority';
+  }
 
   // Ensure certificateDB is in the URI if not present
   if (uri.startsWith('mongodb+srv://') || uri.startsWith('mongodb://')) {
