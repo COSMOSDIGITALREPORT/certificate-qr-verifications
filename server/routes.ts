@@ -35,6 +35,7 @@ import {
   CertificateInputSchema,
   LoginInputSchema,
   RevokeInputSchema,
+  DEFAULT_CONTENT_BODY,
 } from './validation.js';
 import { generateCertificatePdf, inspectPdfTemplate } from './pdfEngine.js';
 import { generateQrDataUrl } from './qr.js';
@@ -355,6 +356,7 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
       approverDesignation: input.approverDesignation || null,
       issueLocation: input.issueLocation || 'Nagpur, Maharashtra, India',
       additionalNotes: input.additionalNotes || null,
+      contentBody: input.contentBody?.trim() || DEFAULT_CONTENT_BODY,
       status: 'VALID',
       verificationUrl: fullVerificationUrl,
       verificationPath,
@@ -526,6 +528,7 @@ apiRouter.get('/verify/:verificationId', async (req: Request, res: Response): Pr
           approverName: cert.approverName || undefined,
           approverDesignation: cert.approverDesignation || undefined,
           issueLocation: cert.issueLocation || undefined,
+          contentBody: cert.contentBody || DEFAULT_CONTENT_BODY,
           issuedAt: cert.issuedAt,
           createdAt: cert.createdAt || undefined,
           hasPdf,
@@ -562,6 +565,7 @@ apiRouter.get('/verify/:verificationId', async (req: Request, res: Response): Pr
         approverName: cert.approverName || undefined,
         approverDesignation: cert.approverDesignation || undefined,
         issueLocation: cert.issueLocation || undefined,
+        contentBody: cert.contentBody || DEFAULT_CONTENT_BODY,
         issuedAt: cert.issuedAt,
         createdAt: cert.createdAt || undefined,
         hasPdf,

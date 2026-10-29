@@ -194,6 +194,13 @@ export const CertificateDetailModal: React.FC<CertificateDetailModalProps> = ({
               </div>
             </div>
 
+            {certificate.contentBody && (
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-700 space-y-1">
+                <span className="text-slate-800 font-semibold block">Content Body / Description:</span>
+                <p className="whitespace-pre-wrap leading-relaxed">{certificate.contentBody}</p>
+              </div>
+            )}
+
             {certificate.additionalNotes && (
               <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600">
                 <span className="text-slate-800 font-semibold block mb-0.5">Admin Notes:</span>

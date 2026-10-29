@@ -109,6 +109,7 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
       approverDesignation TEXT,
       issueLocation TEXT,
       additionalNotes TEXT,
+      contentBody TEXT,
       status TEXT NOT NULL,
       verificationUrl TEXT,
       verificationPath TEXT NOT NULL,
@@ -131,6 +132,9 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
   } catch {}
   try {
     dbInstance.run('ALTER TABLE certificates ADD COLUMN verificationUrl TEXT;');
+  } catch {}
+  try {
+    dbInstance.run('ALTER TABLE certificates ADD COLUMN contentBody TEXT;');
   } catch {}
 
   // Synchronize or seed default admin in SQLite
@@ -265,6 +269,7 @@ function rowToCertificate(row: Record<string, any>): Certificate {
     approverDesignation: row.approverDesignation ? String(row.approverDesignation) : null,
     issueLocation: row.issueLocation ? String(row.issueLocation) : null,
     additionalNotes: row.additionalNotes ? String(row.additionalNotes) : null,
+    contentBody: row.contentBody ? String(row.contentBody) : null,
     status: (row.status as CertificateStatus) || 'VALID',
     verificationUrl: row.verificationUrl ? String(row.verificationUrl) : undefined,
     verificationPath: String(row.verificationPath),
@@ -551,9 +556,9 @@ export async function insertCertificate(cert: Certificate): Promise<Certificate>
         id, certificateNumber, verificationId, recipientName, recipientEmail,
         designation, department, certificateType, internshipDuration, startDate, endDate,
         issuingCompany, signatoryName, signatoryRole, initiatorName, approverName,
-        approverDesignation, issueLocation, additionalNotes, status, verificationUrl, verificationPath,
+        approverDesignation, issueLocation, additionalNotes, contentBody, status, verificationUrl, verificationPath,
         pdfPath, issuedAt, revokedAt, revocationReason, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         cert.id,
         cert.certificateNumber,
@@ -574,6 +579,7 @@ export async function insertCertificate(cert: Certificate): Promise<Certificate>
         cert.approverDesignation || null,
         cert.issueLocation || null,
         cert.additionalNotes || null,
+        cert.contentBody || null,
         cert.status,
         cert.verificationUrl || null,
         cert.verificationPath,
@@ -614,6 +620,9 @@ export async function updateCertificate(
   }
   if (updates.department !== undefined) {
     db.run('UPDATE certificates SET department = ?, updatedAt = ? WHERE id = ?', [updates.department, now, id]);
+  }
+  if (updates.contentBody !== undefined) {
+    db.run('UPDATE certificates SET contentBody = ?, updatedAt = ? WHERE id = ?', [updates.contentBody, now, id]);
   }
   saveDatabaseToDisk();
 

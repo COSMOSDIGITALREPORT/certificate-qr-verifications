@@ -32,6 +32,7 @@ export interface IStudentCertificateDoc extends Document {
   approverDesignation?: string | null;
   issueLocation?: string | null;
   additionalNotes?: string | null;
+  contentBody?: string | null;
   status: CertificateStatus;
   verificationUrl: string;
   verificationPath: string;
@@ -65,6 +66,7 @@ const StudentCertificateSchema = new Schema<IStudentCertificateDoc>(
     approverDesignation: { type: String, default: null, trim: true },
     issueLocation: { type: String, default: 'Nagpur, Maharashtra, India', trim: true },
     additionalNotes: { type: String, default: null, trim: true },
+    contentBody: { type: String, default: null, trim: true },
     status: { type: String, enum: ['VALID', 'REVOKED'], default: 'VALID', index: true },
     verificationUrl: { type: String, required: true, trim: true },
     verificationPath: { type: String, required: true, trim: true },
@@ -285,6 +287,7 @@ function docToCertificate(doc: any): Certificate {
     approverDesignation: doc.approverDesignation || null,
     issueLocation: doc.issueLocation || null,
     additionalNotes: doc.additionalNotes || null,
+    contentBody: doc.contentBody || null,
     status: (doc.status as CertificateStatus) || 'VALID',
     verificationUrl: doc.verificationUrl,
     verificationPath: doc.verificationPath,
@@ -443,6 +446,7 @@ export async function insertCertificateMongo(cert: Certificate): Promise<Certifi
     approverDesignation: cert.approverDesignation || null,
     issueLocation: cert.issueLocation || null,
     additionalNotes: cert.additionalNotes || null,
+    contentBody: cert.contentBody || null,
     status: cert.status,
     verificationUrl: cert.verificationUrl,
     verificationPath: cert.verificationPath,

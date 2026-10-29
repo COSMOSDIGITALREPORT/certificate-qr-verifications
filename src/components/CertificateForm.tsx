@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api.js';
 import { Certificate, CertificateInput } from '../types/index.js';
-import { calculateInternshipDuration } from '../../server/validation.js';
+import { calculateInternshipDuration, DEFAULT_CONTENT_BODY } from '../../server/validation.js';
 
 interface CertificateFormProps {
   onSuccess: (cert: Certificate) => void;
@@ -51,6 +51,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
   const [approverName, setApproverName] = useState('');
   const [approverDesignation, setApproverDesignation] = useState('');
   const [issueLocation, setIssueLocation] = useState('Nagpur, Maharashtra, India');
+  const [contentBody, setContentBody] = useState(DEFAULT_CONTENT_BODY);
   const [additionalNotes, setAdditionalNotes] = useState('');
 
   // UI state
@@ -112,6 +113,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
         approverName: approverName.trim() || undefined,
         approverDesignation: approverDesignation.trim() || undefined,
         issueLocation: issueLocation.trim(),
+        contentBody: contentBody.trim() || undefined,
         additionalNotes: additionalNotes.trim() || undefined,
       };
 
@@ -133,6 +135,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
     setSuccessData(null);
     setRecipientName('');
     setRecipientEmail('');
+    setContentBody(DEFAULT_CONTENT_BODY);
     setAdditionalNotes('');
     setApproverName('');
     setApproverDesignation('');
@@ -378,6 +381,23 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                 <option value="Certificate of Excellence">Certificate of Excellence</option>
                 <option value="Certificate of Appreciation">Certificate of Appreciation</option>
               </select>
+            </div>
+
+            {/* Content Body (Multiline Text Area) */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Content Body <span className="text-slate-400 font-normal">(Editable Certificate Description)</span>
+              </label>
+              <textarea
+                rows={3}
+                value={contentBody}
+                onChange={(e) => setContentBody(e.target.value)}
+                placeholder="The professional has demonstrated a satisfactory initiative and a commitment for deepening their skills and advancing their career. Well done!"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-50 resize-y leading-relaxed"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Custom commendation text printed in the certificate description area. Line breaks are preserved.
+              </p>
             </div>
 
           </div>

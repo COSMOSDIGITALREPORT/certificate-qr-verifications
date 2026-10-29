@@ -25,6 +25,7 @@ export interface Certificate {
   approverDesignation?: string | null;
   issueLocation?: string | null;
   additionalNotes?: string | null;
+  contentBody?: string | null;
   status: CertificateStatus;
   verificationUrl?: string;  // e.g. "http://192.168.101.73:3000/verify/cg-..."
   verificationPath: string;  // "/verify/cg-26832-..."
@@ -57,6 +58,7 @@ export interface PublicVerificationResult {
     approverName?: string;
     approverDesignation?: string;
     issueLocation?: string;
+    contentBody?: string | null;
     issuedAt: string;
     createdAt?: string;
     hasPdf: boolean;
@@ -86,6 +88,7 @@ export interface CertificateInput {
   approverDesignation?: string;
   issueLocation?: string;
   additionalNotes?: string;
+  contentBody?: string;
 }
 
 export interface DashboardMetrics {

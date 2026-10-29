@@ -5,6 +5,9 @@
 
 import { z } from 'zod';
 
+export const DEFAULT_CONTENT_BODY =
+  'The professional has demonstrated a satisfactory initiative and a commitment for deepening their skills and advancing their career. Well done!';
+
 export const CertificateInputSchema = z.object({
   recipientName: z.string().trim().min(2, 'Recipient name must have at least 2 characters'),
   recipientEmail: z.string().trim().email('Invalid email address').optional().or(z.literal('')),
@@ -21,6 +24,7 @@ export const CertificateInputSchema = z.object({
   approverName: z.string().trim().optional(),
   approverDesignation: z.string().trim().optional(),
   issueLocation: z.string().trim().optional().default('Nagpur, Maharashtra, India'),
+  contentBody: z.string().trim().optional(),
   additionalNotes: z.string().trim().optional(),
 }).refine((data) => {
   const start = new Date(data.startDate).getTime();

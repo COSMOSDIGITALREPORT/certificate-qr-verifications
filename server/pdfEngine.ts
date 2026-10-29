@@ -9,7 +9,7 @@ import os from 'node:os';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Certificate } from '../src/types/index.js';
 import { generateQrPngBuffer } from './qr.js';
-import { formatDateToIndianStandard } from './validation.js';
+import { formatDateToIndianStandard, DEFAULT_CONTENT_BODY } from './validation.js';
 
 function getLanIPv4(): string | null {
   const interfaces = os.networkInterfaces();
@@ -59,6 +59,51 @@ export function resolveEffectiveBaseUrl(providedUrl?: string): string {
   }
 
   return (providedUrl || envUrl || `http://localhost:${port}`).replace(/\/$/, '');
+}
+
+/**
+ * Word-wraps text within a specified width, preserving explicit line breaks (\r?\n)
+ */
+export function wrapTextToLines(
+  text: string,
+  maxWidth: number,
+  font: any,
+  fontSize: number
+): string[] {
+  if (!text) return [];
+  const paragraphs = text.split(/\r?\n/);
+  const resultLines: string[] = [];
+
+  for (const para of paragraphs) {
+    const trimmedPara = para.trim();
+    if (!trimmedPara) {
+      resultLines.push('');
+      continue;
+    }
+
+    const words = trimmedPara.split(/\s+/);
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const width = font.widthOfTextAtSize(testLine, fontSize);
+
+      if (width <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          resultLines.push(currentLine);
+        }
+        currentLine = word;
+      }
+    }
+
+    if (currentLine) {
+      resultLines.push(currentLine);
+    }
+  }
+
+  return resultLines;
 }
 
 const TEMPLATES_DIR = path.resolve(process.cwd(), 'templates');
@@ -230,9 +275,9 @@ export async function generateCertificatePdf(
     // 2. Clean dynamic middle student block
     page.drawRectangle({
       x: 55,
-      y: 135,
+      y: 125,
       width: 250,
-      height: 75,
+      height: 85,
       color: pureWhite,
     });
 
@@ -278,27 +323,23 @@ export async function generateCertificatePdf(
       color: darkText,
     });
 
-    // 6. Draw Commendation Body Text
-    page.drawText('The professional has demonstrated an satisfactory initiative and a', {
-      x: 58,
-      y: 157,
-      size: 7.2,
-      font: fontRegular,
-      color: darkText,
-    });
-    page.drawText('commitment for deepening their skills and advancing their', {
-      x: 58,
-      y: 148,
-      size: 7.2,
-      font: fontRegular,
-      color: darkText,
-    });
-    page.drawText('career, Well done!', {
-      x: 58,
-      y: 139,
-      size: 7.2,
-      font: fontRegular,
-      color: darkText,
+    // 6. Draw Commendation Body Text (Editable Content Body)
+    const effectiveBody = (cert.contentBody && cert.contentBody.trim()) || DEFAULT_CONTENT_BODY;
+    const bodyLines = wrapTextToLines(effectiveBody, 220, fontRegular, 7.2);
+    const startY = 157;
+    const lineHeight = bodyLines.length > 4 ? 8.2 : 9.0;
+    const bodyFontSize = bodyLines.length > 5 ? 6.5 : 7.2;
+
+    bodyLines.forEach((lineText, idx) => {
+      if (lineText && lineText.trim()) {
+        page.drawText(lineText, {
+          x: 58,
+          y: startY - idx * lineHeight,
+          size: bodyFontSize,
+          font: fontRegular,
+          color: darkText,
+        });
+      }
     });
 
     // 7. Clean and Draw Bottom-Left Dates & Certificate Number

@@ -406,6 +406,19 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
                   </p>
                 </div>
 
+                {/* Commendation / Content Body */}
+                {result.certificate?.contentBody && (
+                  <div className="sm:col-span-2 rounded-xl bg-slate-50 border border-slate-200 p-3.5 space-y-1">
+                    <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>COMMENDATION &amp; DESCRIPTION</span>
+                    </div>
+                    <p className="text-slate-800 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
+                      {result.certificate.contentBody}
+                    </p>
+                  </div>
+                )}
+
               </div>
             </div>
 
