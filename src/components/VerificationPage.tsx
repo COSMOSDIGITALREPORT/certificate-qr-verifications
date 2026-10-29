@@ -25,6 +25,7 @@ import {
   CalendarCheck,
   UserCheck,
   FileBadge2,
+  Sparkles,
 } from 'lucide-react';
 import { api, getCertificateDownloadUrl } from '../services/api.js';
 import { PublicVerificationResult } from '../types/index.js';
@@ -110,13 +111,13 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
         
         {/* Top Header / Company Badge */}
         <div className="flex items-center justify-between">
-          {onBackToDashboard && isAdminLoggedIn ? (
+          {onBackToDashboard ? (
             <button
               onClick={onBackToDashboard}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Admin</span>
+              <span>{isAdminLoggedIn ? 'Back to Admin' : 'Back to Sign In'}</span>
             </button>
           ) : (
             <div className="flex items-center gap-2.5">

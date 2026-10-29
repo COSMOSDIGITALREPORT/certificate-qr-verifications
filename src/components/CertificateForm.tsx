@@ -62,6 +62,8 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
     verificationUrl: string;
     downloadUrl: string;
     qrDataUrl: string;
+    isLocalhostUrl?: boolean;
+    warning?: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 

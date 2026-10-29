@@ -142,13 +142,17 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
 
         {/* Link to Public Verification */}
         <div className="text-center">
-          <button
-            onClick={onGoToPublicVerification}
+          <a
+            href="/verify"
+            onClick={(e) => {
+              e.preventDefault();
+              onGoToPublicVerification();
+            }}
             className="text-xs font-medium text-slate-600 hover:text-emerald-700 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Go to Public QR Certificate Verification Portal</span>
-          </button>
+          </a>
         </div>
 
       </div>

@@ -480,7 +480,7 @@ apiRouter.put('/certificates/:id', requireAdmin, async (req: Request, res: Respo
 apiRouter.get('/verify/:verificationId', async (req: Request, res: Response): Promise<void> => {
   try {
     const verificationId = req.params.verificationId;
-    if (!verificationId || verificationId.length < 5) {
+    if (!verificationId || verificationId.trim().length < 3) {
       const response: PublicVerificationResult = {
         valid: false,
         status: 'NOT_FOUND',
@@ -490,7 +490,14 @@ apiRouter.get('/verify/:verificationId', async (req: Request, res: Response): Pr
       return;
     }
 
-    const cert = await getCertificateByVerificationId(verificationId);
+    let cert = await getCertificateByVerificationId(verificationId.trim());
+    if (!cert) {
+      const clean = verificationId.trim();
+      cert =
+        (await getCertificateByNumber(clean)) ||
+        (await getCertificateByNumber(`#${clean.replace(/^#/, '')}`)) ||
+        (await getCertificateByNumber(clean.replace(/^#/, '')));
+    }
 
     if (!cert) {
       const response: PublicVerificationResult = {

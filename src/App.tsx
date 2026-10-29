@@ -28,18 +28,24 @@ export default function App() {
   // Verification Portal state
   const [activeVerificationId, setActiveVerificationId] = useState<string>('cg-26832-7a8e');
 
-  // Check URL pathname for direct public verification routing (/verify/:id)
+  // Check URL pathname for direct public verification routing (/verify or /verify/:id)
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path.startsWith('/verify/')) {
-      const parts = path.split('/verify/');
-      if (parts[1]) {
-        setActiveVerificationId(decodeURIComponent(parts[1]).replace(/\/$/, '').trim());
+    const parseRoute = () => {
+      const path = window.location.pathname;
+      if (path === '/verify' || path === '/verify/') {
+        setCurrentTab('verify');
+      } else if (path.startsWith('/verify/')) {
+        const verId = decodeURIComponent(path.slice('/verify/'.length)).replace(/\/$/, '').trim();
+        if (verId) {
+          setActiveVerificationId(verId);
+        }
         setCurrentTab('verify');
       }
-    } else if (path === '/verify') {
-      setCurrentTab('verify');
-    }
+    };
+
+    parseRoute();
+    window.addEventListener('popstate', parseRoute);
+    return () => window.removeEventListener('popstate', parseRoute);
   }, []);
 
   // Check session authentication on initial mount
@@ -78,8 +84,22 @@ export default function App() {
   };
 
   const handleNavigate = (tab: string, certIdOrVerificationId?: string) => {
-    if (tab === 'verify' && certIdOrVerificationId) {
-      setActiveVerificationId(certIdOrVerificationId);
+    if (tab === 'verify') {
+      if (certIdOrVerificationId) {
+        setActiveVerificationId(certIdOrVerificationId);
+        const targetPath = `/verify/${encodeURIComponent(certIdOrVerificationId)}`;
+        if (window.location.pathname !== targetPath) {
+          window.history.pushState({}, '', targetPath);
+        }
+      } else {
+        if (!window.location.pathname.startsWith('/verify')) {
+          window.history.pushState({}, '', '/verify');
+        }
+      }
+    } else {
+      if (window.location.pathname.startsWith('/verify')) {
+        window.history.pushState({}, '', '/');
+      }
     }
     setCurrentTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -91,7 +111,9 @@ export default function App() {
       <div className="min-h-screen bg-slate-50">
         <VerificationPage
           initialVerificationId={activeVerificationId}
-          onBackToDashboard={() => setCurrentTab('dashboard')}
+          onBackToDashboard={() => {
+            handleNavigate(adminUser ? 'dashboard' : 'login');
+          }}
           isAdminLoggedIn={!!adminUser}
         />
       </div>
@@ -124,7 +146,7 @@ export default function App() {
               setCurrentTab('dashboard');
             }}
             onGoToPublicVerification={() => {
-              setCurrentTab('verify');
+              handleNavigate('verify');
             }}
           />
         ) : (
