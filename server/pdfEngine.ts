@@ -205,14 +205,14 @@ export async function generateCertificatePdf(
     // 1. Clean and draw Certificate Title
     page.drawRectangle({
       x: 55,
-      y: 213,
+      y: 211,
       width: 220,
-      height: 14,
+      height: 16,
       color: pureWhite,
     });
     page.drawText((cert.certificateType || 'CERTIFICATE OF COMPLETION').toUpperCase(), {
       x: 58,
-      y: 216,
+      y: 214,
       size: 9.5,
       font: fontBold,
       color: darkText,
@@ -221,9 +221,9 @@ export async function generateCertificatePdf(
     // 2. Clean dynamic middle student block
     page.drawRectangle({
       x: 55,
-      y: 120,
+      y: 135,
       width: 250,
-      height: 90,
+      height: 75,
       color: pureWhite,
     });
 
@@ -244,7 +244,7 @@ export async function generateCertificatePdf(
     const durationText = `Successfully completed a ${cert.internshipDuration} internship`;
     page.drawText(durationText, {
       x: 58,
-      y: 179,
+      y: 183,
       size: 9.5,
       font: fontRegular,
       color: darkText,
@@ -253,7 +253,7 @@ export async function generateCertificatePdf(
     // 5. Draw Designation / Role
     page.drawText('As ', {
       x: 58,
-      y: 161,
+      y: 169,
       size: 12,
       font: fontBold,
       color: darkText,
@@ -263,7 +263,7 @@ export async function generateCertificatePdf(
     if (cert.designation.length > 24) roleSize = 10.5;
     page.drawText(cert.designation, {
       x: 77,
-      y: 161,
+      y: 169,
       size: roleSize,
       font: fontBold,
       color: darkText,
@@ -272,32 +272,32 @@ export async function generateCertificatePdf(
     // 6. Draw Commendation Body Text
     page.drawText('The professional has demonstrated an satisfactory initiative and a', {
       x: 58,
-      y: 145,
+      y: 157,
       size: 7.2,
       font: fontRegular,
       color: darkText,
     });
     page.drawText('commitment for deepening their skills and advancing their', {
       x: 58,
-      y: 135,
+      y: 148,
       size: 7.2,
       font: fontRegular,
       color: darkText,
     });
     page.drawText('career, Well done!', {
       x: 58,
-      y: 125,
+      y: 139,
       size: 7.2,
       font: fontRegular,
       color: darkText,
     });
 
-    // 6. Clean and Draw Bottom-Left Dates & Certificate Number
+    // 7. Clean and Draw Bottom-Left Dates & Certificate Number
     page.drawRectangle({
       x: 54,
-      y: 55,
+      y: 58,
       width: 140,
-      height: 38,
+      height: 32,
       color: pureWhite,
     });
 
@@ -311,7 +311,7 @@ export async function generateCertificatePdf(
 
     page.drawText(`End Date :- ${formattedEnd}`, {
       x: 58,
-      y: 71,
+      y: 72,
       size: 7.5,
       font: fontBold,
       color: dateTeal,
@@ -319,7 +319,7 @@ export async function generateCertificatePdf(
 
     page.drawText(`Certificate No. :- ${cert.certificateNumber}`, {
       x: 58,
-      y: 61,
+      y: 63,
       size: 7.5,
       font: fontBold,
       color: dateTeal,
