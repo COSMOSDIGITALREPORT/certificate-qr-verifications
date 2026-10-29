@@ -50,7 +50,7 @@ export function recordFailedLogin(ip: string): void {
   record.attempts += 1;
 
   if (record.attempts >= 5) {
-    record.blockedUntil = now + 15 * 60 * 1000; // Block for 15 minutes
+    record.blockedUntil = now + 60 * 1000; // Block for 1 minute
   }
 
   loginRateLimitMap.set(ip, record);
