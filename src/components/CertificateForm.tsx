@@ -31,7 +31,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
   onSuccess,
   onOpenVerification,
 }) => {
-  const [nextNumber, setNextNumber] = useState<string>('#...');
+  const [nextNumber, setNextNumber] = useState<string>('#26847');
   const [loadingNumber, setLoadingNumber] = useState(true);
 
   // Form State
@@ -72,6 +72,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
         setNextNumber(num);
       } catch (err) {
         console.error('Failed to get next number:', err);
+        setNextNumber('#26847');
       } finally {
         setLoadingNumber(false);
       }
@@ -136,6 +137,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
       setNextNumber(num);
     } catch (err) {
       console.error(err);
+      setNextNumber('#26847');
     }
   };
 

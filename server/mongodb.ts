@@ -351,20 +351,43 @@ export async function getCertificateByNumberMongo(certificateNumber: string): Pr
   return doc ? docToCertificate(doc) : null;
 }
 
+export const STARTING_CERTIFICATE_NUMBER = 26847;
+
 export async function getNextCertificateNumberMongo(): Promise<string> {
   const docs = await StudentCertificateModel.find({}, { certificateNumber: 1 }).lean();
-  let maxNum = 26832;
+  const existingNumbers = new Set<string>();
+  let maxInSeries = STARTING_CERTIFICATE_NUMBER - 1;
 
   for (const doc of docs) {
-    const raw = String(doc.certificateNumber || '');
-    const clean = raw.replace(/[^0-9]/g, '');
-    const num = parseInt(clean, 10);
-    if (!isNaN(num) && num > maxNum) {
-      maxNum = num;
+    const raw = String(doc.certificateNumber || '').trim();
+    if (raw) {
+      existingNumbers.add(raw);
+      const clean = raw.replace(/[^0-9]/g, '');
+      if (clean) {
+        existingNumbers.add(clean);
+        existingNumbers.add(`#${clean}`);
+      }
+
+      // Track pure numeric certificate numbers in the continuous series (>= 26847 and < 31000)
+      // ignoring legacy test anomalies (e.g. 31000s, 80000s, or prefixed codes)
+      const match = raw.match(/^#?(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num >= STARTING_CERTIFICATE_NUMBER && num < 31000) {
+          if (num > maxInSeries) {
+            maxInSeries = num;
+          }
+        }
+      }
     }
   }
 
-  return `#${maxNum + 1}`;
+  let candidate = Math.max(STARTING_CERTIFICATE_NUMBER, maxInSeries + 1);
+  while (existingNumbers.has(`#${candidate}`) || existingNumbers.has(String(candidate))) {
+    candidate++;
+  }
+
+  return `#${candidate}`;
 }
 
 export async function insertCertificateMongo(cert: Certificate): Promise<Certificate> {
