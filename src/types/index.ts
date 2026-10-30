@@ -110,18 +110,26 @@ export interface CertificateInput {
 }
 
 export interface OfferLetterInput {
-  recipientName: string;
+  cinNumber?: string;
   letterDate: string;
+  recipientName: string;
   subject: string;
+  greetingName?: string;
   position: string;
   companyName: string;
-  letterBody?: string;
+  letterBody: string;
+  internshipPosition?: string;
   startDate: string;
   endDate: string;
-  stipend: string;
-  employmentBond?: string;
-  terminationClause?: string;
-  authorizedPersonName?: string;
+  stipendAmount?: string;
+  stipendConditions?: string;
+  stipend?: string;
+  employmentBond: string;
+  terminationClause: string;
+  employeeName?: string;
+  employeeSignatureText?: string;
+  directorName?: string;
+  directorDesignation?: string;
 }
 
 export interface CosmosDigitalCertificateInput {

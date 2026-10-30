@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { Certificate } from '../src/types/index.js';
+import { Certificate, OfferLetterInput } from '../src/types/index.js';
 import { generateQrPngBuffer } from './qr.js';
 import { formatDateToIndianStandard, DEFAULT_CONTENT_BODY } from './validation.js';
 
@@ -112,6 +112,9 @@ const SIGNATURE_FILE = path.join(TEMPLATES_DIR, 'director-signature.png');
 const STORAGE_DIR = path.resolve(process.cwd(), 'storage/certificates');
 const UPLOADED_TEMPLATE_SOURCE = path.resolve(process.cwd(), 'public/assets/aistudio/Yuvraj_-_CERTIFICATE_70672610.pdf');
 const FALLBACK_SIGNATURE_SOURCE = path.resolve(process.cwd(), 'public/assets/director-signature.png');
+const OFFER_LETTERS_STORAGE_DIR = path.resolve(process.cwd(), 'storage/offer-letters');
+const OFFER_LETTER_BASE_PDF = path.join(TEMPLATES_DIR, 'offer-letter-base.pdf');
+const OFFER_LETTER_TEMPLATE_PDF = path.join(TEMPLATES_DIR, 'offer-letter-template.pdf');
 
 // Default Dimensions
 const A4_WIDTH = 841.89; // pt
@@ -691,5 +694,296 @@ export async function generateCosmosDigitalCertificatePdf(
     pdfBuffer,
     relativePath: `storage/certificates/${relativeFileName}`,
     fullPath: fullFilePath,
+  };
+}
+
+
+export interface GeneratedOfferLetterResult {
+  pdfBuffer: Buffer;
+  relativePath: string;
+  fullPath: string;
+  filename: string;
+}
+
+/**
+ * Generates an Offer Letter PDF from the new CosmoGeek Professional PDF template.
+ * STRICT: Does NOT add any QR code, scanner link, or verification ID.
+ */
+export async function generateOfferLetterPdf(
+  input: OfferLetterInput & { id?: string }
+): Promise<GeneratedOfferLetterResult> {
+  if (!fs.existsSync(OFFER_LETTERS_STORAGE_DIR)) {
+    fs.mkdirSync(OFFER_LETTERS_STORAGE_DIR, { recursive: true });
+  }
+
+  // Load the base letterhead template (with logos, watermark, and footer intact)
+  let templatePath = OFFER_LETTER_BASE_PDF;
+  if (!fs.existsSync(templatePath)) {
+    templatePath = OFFER_LETTER_TEMPLATE_PDF;
+  }
+  if (!fs.existsSync(templatePath)) {
+    throw new Error('Offer Letter base PDF template not found in templates directory');
+  }
+
+  const templateBytes = fs.readFileSync(templatePath);
+  const pdfDoc = await PDFDocument.load(templateBytes);
+  const page = pdfDoc.getPage(0);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  const primaryColor = rgb(23 / 255, 43 / 255, 58 / 255); // #172b3a
+  const darkColor = rgb(22 / 255, 22 / 255, 22 / 255); // #161616
+
+  // Coordinate helper: PyMuPDF y -> pdf-lib y (from bottom of 792 pt page)
+  const toPdfY = (pyY: number, fontSize = 11) => 792 - pyY - fontSize * 0.85;
+
+  // 1. CIN Number & Letter Date
+  const rawCin = input.cinNumber || 'U62091MH2025PTC459728';
+  const cinText = rawCin.startsWith('CIN No:') ? rawCin : `CIN No: ${rawCin}`;
+  page.drawText(cinText, {
+    x: 56.2,
+    y: toPdfY(115.2, 11),
+    size: 11,
+    font: fontBold,
+    color: darkColor,
+  });
+
+  const rawDate = input.letterDate || '30/06/2026';
+  const dateText = rawDate.startsWith('Date:') ? rawDate : `Date: ${rawDate}`;
+  const dateWidth = fontBold.widthOfTextAtSize(dateText, 12);
+  page.drawText(dateText, {
+    x: 554.7 - dateWidth,
+    y: toPdfY(114.3, 12),
+    size: 12,
+    font: fontBold,
+    color: darkColor,
+  });
+
+  // 2. To & Recipient Full Name
+  page.drawText('To,', {
+    x: 56.2,
+    y: toPdfY(141.0, 11),
+    size: 11,
+    font: fontRegular,
+    color: primaryColor,
+  });
+
+  const recipientFormatted = input.recipientName.endsWith(',') ? input.recipientName : `${input.recipientName},`;
+  page.drawText(recipientFormatted, {
+    x: 56.2,
+    y: toPdfY(162.5, 11),
+    size: 11,
+    font: fontRegular,
+    color: primaryColor,
+  });
+
+  // 3. Subject
+  const subjectText = input.subject || 'Employment Offer Letter For N8N Automation';
+  page.drawText('Subject :-', {
+    x: 56.2,
+    y: toPdfY(205.3, 11),
+    size: 11,
+    font: fontBold,
+    color: primaryColor,
+  });
+  page.drawText(subjectText, {
+    x: 108.0,
+    y: toPdfY(205.3, 11),
+    size: 11,
+    font: fontRegular,
+    color: primaryColor,
+  });
+
+  // 4. Greeting Name
+  const greeting = input.greetingName
+    ? `Dear ${input.greetingName},`
+    : `Dear ${input.recipientName.trim().split(/\s+/)[0]},`;
+  page.drawText(greeting, {
+    x: 56.2,
+    y: toPdfY(236.8, 11),
+    size: 11,
+    font: fontBold,
+    color: primaryColor,
+  });
+
+  // 5. Offer Letter Introduction / Body
+  const defaultBody =
+    'We are pleased to offer you the position of N8N Automation Intern at Cosmogeek Software Solutions Pvt. Ltd. We were impressed with your skills and believe that your passion and creativity will be a valuable additional to our team.';
+  const bodyText = (input.letterBody || defaultBody).trim();
+  const maxWidth = 555 - 56.2;
+  const introLines = wrapTextToLines(bodyText, maxWidth, fontRegular, 11);
+  let curY = 274.2;
+  const lineHeight = 15.6;
+
+  for (const line of introLines) {
+    if (line) {
+      page.drawText(line, {
+        x: 56.2,
+        y: toPdfY(curY, 11),
+        size: 11,
+        font: fontRegular,
+        color: primaryColor,
+      });
+    }
+    curY += lineHeight;
+  }
+
+  // 6. Internship Details
+  curY = Math.max(curY + 12, 348.7);
+  page.drawText('Internship Details:-', {
+    x: 56.2,
+    y: toPdfY(curY, 12),
+    size: 12,
+    font: fontBold,
+    color: primaryColor,
+  });
+
+  const effectiveStipend =
+    input.stipend ||
+    (input.stipendAmount
+      ? `${input.stipendAmount} ${input.stipendConditions || ''}`.trim()
+      : '5,000 - 7,000 (Based on your Performance)');
+
+  const details = [
+    { label: 'Position', value: input.position || input.internshipPosition || 'N8N Automation' },
+    { label: 'Starting Date', value: input.startDate || '01 July, 2026' },
+    { label: 'Ending Date', value: input.endDate || '01 January, 2027' },
+    { label: 'Stipend', value: effectiveStipend },
+  ];
+
+  curY += 20;
+  for (const item of details) {
+    page.drawText(item.label, {
+      x: 56.2,
+      y: toPdfY(curY, 11),
+      size: 11,
+      font: fontBold,
+      color: primaryColor,
+    });
+    page.drawText(':-', {
+      x: 128.2,
+      y: toPdfY(curY, 11),
+      size: 11,
+      font: fontBold,
+      color: primaryColor,
+    });
+    page.drawText(item.value, {
+      x: 140.0,
+      y: toPdfY(curY, 11),
+      size: 11,
+      font: fontRegular,
+      color: primaryColor,
+    });
+    curY += 18;
+  }
+
+  // 7. Terms & Conditions
+  curY = Math.max(curY + 14, 474.8);
+  page.drawText('Terms & Conditions:', {
+    x: 56.2,
+    y: toPdfY(curY, 12),
+    size: 12,
+    font: fontBold,
+    color: darkColor,
+  });
+
+  curY += 20;
+  // 1. Employment Bond
+  page.drawText('1.', {
+    x: 56.2,
+    y: toPdfY(curY, 10.8),
+    size: 10.8,
+    font: fontBold,
+    color: primaryColor,
+  });
+  const bondFull = `Employment Bond: ${input.employmentBond || 'Upon confirmation as a full-time employee, you agree to commit to a minimum employment period of 6 months.'}`;
+  const bondLines = wrapTextToLines(bondFull, maxWidth - 18, fontBold, 10.8);
+  for (const bLine of bondLines) {
+    page.drawText(bLine, {
+      x: 74.2,
+      y: toPdfY(curY, 10.8),
+      size: 10.8,
+      font: fontBold,
+      color: darkColor,
+    });
+    curY += 14.5;
+  }
+
+  // 2. Termination Clause
+  page.drawText('2.', {
+    x: 56.2,
+    y: toPdfY(curY, 10.8),
+    size: 10.8,
+    font: fontBold,
+    color: primaryColor,
+  });
+  const termFull = `Termination Clause: ${input.terminationClause || 'Cosmogeek Software Solutions reserves the right to terminate your internship or full-time employment at any point, based on performance, conduct, or business needs.'}`;
+  const termLines = wrapTextToLines(termFull, maxWidth - 18, fontBold, 10.8);
+  for (const tLine of termLines) {
+    page.drawText(tLine, {
+      x: 74.2,
+      y: toPdfY(curY, 10.8),
+      size: 10.8,
+      font: fontBold,
+      color: darkColor,
+    });
+    curY += 14.5;
+  }
+
+  // 8. Bottom Signatures
+  // Left: Employee
+  const empName = input.employeeName || input.recipientName.trim().split(/\s+/)[0];
+  page.drawText(empName, {
+    x: 96.6,
+    y: toPdfY(647.9, 11),
+    size: 11,
+    font: fontBold,
+    color: primaryColor,
+  });
+  const empSigText = input.employeeSignatureText || '[Date&Signature]';
+  page.drawText(empSigText, {
+    x: 74.2,
+    y: toPdfY(663.4, 11),
+    size: 11,
+    font: fontRegular,
+    color: primaryColor,
+  });
+
+  // Right: Director
+  const dirName = input.directorName || 'Anirudh Hatwar';
+  const dirWidth = fontBold.widthOfTextAtSize(dirName, 11);
+  page.drawText(dirName, {
+    x: 454 - dirWidth / 2,
+    y: toPdfY(647.9, 11),
+    size: 11,
+    font: fontBold,
+    color: primaryColor,
+  });
+
+  const dirDesig = input.directorDesignation || 'CosmoGeek Software Solutions Private Limited';
+  const desigWidth = fontRegular.widthOfTextAtSize(dirDesig, 11);
+  page.drawText(dirDesig, {
+    x: 554.7 - desigWidth,
+    y: toPdfY(663.4, 11),
+    size: 11,
+    font: fontRegular,
+    color: primaryColor,
+  });
+
+  // Save PDF file
+  const docId = input.id || `offer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const cleanCandidate = input.recipientName.replace(/[^a-zA-Z0-9]/g, '_');
+  const filename = `Offer_Letter_${cleanCandidate}_${docId.slice(-6)}.pdf`;
+  const fullFilePath = path.join(OFFER_LETTERS_STORAGE_DIR, filename);
+
+  const finalPdfBytes = await pdfDoc.save();
+  const pdfBuffer = Buffer.from(finalPdfBytes);
+  fs.writeFileSync(fullFilePath, pdfBuffer);
+
+  return {
+    pdfBuffer,
+    relativePath: `storage/offer-letters/${filename}`,
+    fullPath: fullFilePath,
+    filename,
   };
 }

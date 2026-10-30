@@ -47,26 +47,33 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
   const [loadingNumber, setLoadingNumber] = useState(true);
 
   // -------------------------------------------------------------
-  // 1. OPTION 1: OFFER LETTER STATE
+  // 1. OPTION 1: OFFER LETTER STATE (CosmoGeek Professional PDF)
   // -------------------------------------------------------------
-  const [offerRecipientName, setOfferRecipientName] = useState('');
+  const [offerCinNumber, setOfferCinNumber] = useState('U62091MH2025PTC459728');
   const [offerLetterDate, setOfferLetterDate] = useState('30/06/2026');
+  const [offerRecipientName, setOfferRecipientName] = useState('Vedant Charde');
   const [offerSubject, setOfferSubject] = useState('Employment Offer Letter For N8N Automation');
+  const [offerGreetingName, setOfferGreetingName] = useState('Vedant');
   const [offerPosition, setOfferPosition] = useState('N8N Automation Intern');
   const [offerCompany, setOfferCompany] = useState('Cosmogeek Software Solutions Pvt. Ltd.');
   const [offerBody, setOfferBody] = useState(
     'We are pleased to offer you the position of N8N Automation Intern at Cosmogeek Software Solutions Pvt. Ltd. We were impressed with your skills and believe that your passion and creativity will be a valuable additional to our team.'
   );
+  const [offerInternshipPosition, setOfferInternshipPosition] = useState('N8N Automation');
   const [offerStartDate, setOfferStartDate] = useState('01 July, 2026');
   const [offerEndDate, setOfferEndDate] = useState('01 January, 2027');
-  const [offerStipend, setOfferStipend] = useState('5,000 - 7,000 (Based on your Performance)');
+  const [offerStipendAmount, setOfferStipendAmount] = useState('5,000 - 7,000');
+  const [offerStipendConditions, setOfferStipendConditions] = useState('(Based on your Performance)');
   const [offerBond, setOfferBond] = useState(
     'Upon confirmation as a full-time employee, you agree to commit to a minimum employment period of 6 months.'
   );
   const [offerTermination, setOfferTermination] = useState(
     'Cosmogeek Software Solutions reserves the right to terminate your internship or full-time employment at any point, based on performance, conduct, or business needs.'
   );
-  const [offerAuthSign, setOfferAuthSign] = useState('Authorized Person’s Sign');
+  const [offerEmployeeName, setOfferEmployeeName] = useState('Vedant');
+  const [offerEmployeeSignatureText, setOfferEmployeeSignatureText] = useState('[Date&Signature]');
+  const [offerDirectorName, setOfferDirectorName] = useState('Anirudh Hatwar');
+  const [offerDirectorDesignation, setOfferDirectorDesignation] = useState('CosmoGeek Software Solutions Private Limited');
 
   // Offer Letter Success
   const [offerSuccessData, setOfferSuccessData] = useState<{
@@ -164,25 +171,34 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
     setSubmitting(true);
 
     try {
+      const effectiveStipend = `${offerStipendAmount.trim()} ${offerStipendConditions.trim()}`.trim();
       const input: OfferLetterInput = {
-        recipientName: offerRecipientName.trim(),
+        cinNumber: offerCinNumber.trim(),
         letterDate: offerLetterDate.trim(),
+        recipientName: offerRecipientName.trim(),
         subject: offerSubject.trim(),
+        greetingName: offerGreetingName.trim() || undefined,
         position: offerPosition.trim(),
         companyName: offerCompany.trim(),
-        letterBody: offerBody.trim() || undefined,
+        letterBody: offerBody.trim(),
+        internshipPosition: offerInternshipPosition.trim() || offerPosition.trim(),
         startDate: offerStartDate.trim(),
         endDate: offerEndDate.trim(),
-        stipend: offerStipend.trim(),
-        employmentBond: offerBond.trim() || undefined,
-        terminationClause: offerTermination.trim() || undefined,
-        authorizedPersonName: offerAuthSign.trim() || undefined,
+        stipendAmount: offerStipendAmount.trim(),
+        stipendConditions: offerStipendConditions.trim(),
+        stipend: effectiveStipend,
+        employmentBond: offerBond.trim(),
+        terminationClause: offerTermination.trim(),
+        employeeName: offerEmployeeName.trim() || undefined,
+        employeeSignatureText: offerEmployeeSignatureText.trim(),
+        directorName: offerDirectorName.trim(),
+        directorDesignation: offerDirectorDesignation.trim(),
       };
 
       const result = await api.generateOfferLetter(input);
       setOfferSuccessData(result);
     } catch (err: any) {
-      setError(err?.message || 'Failed to generate Offer Letter document.');
+      setError(err?.message || 'Failed to generate Offer Letter PDF.');
     } finally {
       setSubmitting(false);
     }
@@ -410,9 +426,9 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
           <div className="w-14 h-14 rounded-full bg-sky-50 border-2 border-[#0080FF] text-[#003B73] flex items-center justify-center mx-auto shadow-sm">
             <FileSignature className="w-8 h-8 text-[#0080FF]" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Employment Offer Letter Generated!</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Employment Offer Letter PDF Generated!</h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            Official Word Document (.docx) generated preserving master company branding, corporate border, and signatures.
+            Generated using official CosmoGeek Professional PDF template with company logo, ISO logo, watermark, and director signature.
           </p>
         </div>
 
@@ -436,14 +452,26 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
         </div>
 
         <div className="space-y-3 pt-2">
-          <a
-            href={offerSuccessData.downloadUrl}
-            download
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#003B73] hover:bg-[#002b54] text-white font-bold text-sm shadow-sm transition-all"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download Offer Letter (.docx)</span>
-          </a>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href={offerSuccessData.downloadUrl}
+              download={offerSuccessData.filename}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#003B73] hover:bg-[#002b54] text-white font-bold text-sm shadow-sm transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Offer Letter PDF</span>
+            </a>
+
+            <a
+              href={offerSuccessData.downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm border border-slate-200 transition-all"
+            >
+              <ExternalLink className="w-4 h-4 text-[#0080FF]" />
+              <span>Open PDF in Tab</span>
+            </a>
+          </div>
 
           <div className="text-center pt-2">
             <button
@@ -512,7 +540,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
             </div>
             <h3 className="font-bold text-xs text-slate-900 mt-2.5">1. Offer Letter</h3>
             <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-              Official Cosmogeek Employment Offer Letter (.docx) with custom stipend &amp; bond terms
+              CosmoGeek Professional PDF template with custom terms, stipend &amp; candidate details (No QR)
             </p>
           </button>
 
@@ -581,7 +609,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
       )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* FORM 1: OFFER LETTER                                              */}
+      {/* FORM 1: OFFER LETTER (CosmoGeek Professional PDF)                  */}
       {/* ------------------------------------------------------------------ */}
       {selectedTemplate === 'OFFER_LETTER' && (
         <div className="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm">
@@ -589,38 +617,43 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
             <div>
               <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <FileSignature className="w-5 h-5 text-[#0080FF]" />
-                <span>Issue Employment Offer Letter</span>
+                <span>Issue Employment Offer Letter (CosmoGeek Professional)</span>
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Generates Word Document (.docx) matching official Cosmogeek layout with custom candidate terms
+                Generates high-resolution official PDF matching CosmoGeek Professional template with company &amp; ISO logos, watermark, and custom terms
               </p>
             </div>
-            <span className="px-2.5 py-1 rounded bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-semibold self-start sm:self-auto">
-              Format: DOCX Letterhead
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded bg-blue-50 border border-blue-200 text-[#003B73] text-[11px] font-semibold">
+                Format: PDF Letterhead
+              </span>
+              <span className="px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-semibold">
+                No QR Code
+              </span>
+            </div>
           </div>
 
           <form onSubmit={handleOfferSubmit} className="space-y-6">
             
-            {/* Candidate & Role */}
+            {/* Section 1: CIN & Letter Date */}
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-[#0080FF]" />
-                <span>1. Candidate &amp; Offer Overview</span>
+                <Building2 className="w-3.5 h-3.5 text-[#0080FF]" />
+                <span>1. Corporate Registration &amp; Letter Date</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Candidate Full Name <span className="text-rose-500">*</span>
+                    Corporate Identification Number (CIN No) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    value={offerRecipientName}
-                    onChange={(e) => setOfferRecipientName(e.target.value)}
-                    placeholder="e.g. Vedant Charde"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0080FF] focus:ring-2 focus:ring-sky-100"
+                    value={offerCinNumber}
+                    onChange={(e) => setOfferCinNumber(e.target.value)}
+                    placeholder="e.g. U62091MH2025PTC459728"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF] focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
 
@@ -637,10 +670,56 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF] focus:ring-2 focus:ring-sky-100"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Section 2: Candidate & Role */}
+            <div className="space-y-4 pt-2 border-t border-slate-200">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <User className="w-3.5 h-3.5 text-[#0080FF]" />
+                <span>2. Candidate &amp; Role Details</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Recipient Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={offerRecipientName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setOfferRecipientName(val);
+                      if (!offerGreetingName || offerGreetingName === offerRecipientName.split(' ')[0]) {
+                        setOfferGreetingName(val.trim().split(' ')[0] || '');
+                      }
+                      if (!offerEmployeeName || offerEmployeeName === offerRecipientName.split(' ')[0]) {
+                        setOfferEmployeeName(val.trim().split(' ')[0] || '');
+                      }
+                    }}
+                    placeholder="e.g. Vedant Charde"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0080FF] focus:ring-2 focus:ring-sky-100"
+                  />
+                </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Position / Internship Role <span className="text-rose-500">*</span>
+                    Greeting Name (Salutation)
+                  </label>
+                  <input
+                    type="text"
+                    value={offerGreetingName}
+                    onChange={(e) => setOfferGreetingName(e.target.value)}
+                    placeholder="e.g. Vedant"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF] focus:ring-2 focus:ring-sky-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Job Position / Internship Role <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -668,12 +747,25 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
               </div>
             </div>
 
-            {/* Letter Body */}
+            {/* Section 3: Letter Introduction / Body */}
             <div className="space-y-4 pt-2 border-t border-slate-200">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-[#0080FF]" />
-                <span>2. Letter Introduction &amp; Commendation Body</span>
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-[#0080FF]" />
+                  <span>3. Offer Letter Introduction / Body</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOfferBody(
+                      'We are pleased to offer you the position of N8N Automation Intern at Cosmogeek Software Solutions Pvt. Ltd. We were impressed with your skills and believe that your passion and creativity will be a valuable additional to our team.'
+                    )
+                  }
+                  className="text-[10px] font-semibold text-[#0080FF] hover:text-[#003B73] hover:underline cursor-pointer"
+                >
+                  Reset Default
+                </button>
+              </div>
               <textarea
                 rows={3}
                 value={offerBody}
@@ -682,14 +774,27 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
               />
             </div>
 
-            {/* Timeline, Stipend & Terms */}
+            {/* Section 4: Internship Details & Stipend */}
             <div className="space-y-4 pt-2 border-t border-slate-200">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-[#0080FF]" />
-                <span>3. Internship Details, Stipend &amp; Terms</span>
+                <span>4. Internship Schedule &amp; Stipend Details</span>
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Position (In Details Table)
+                  </label>
+                  <input
+                    type="text"
+                    value={offerInternshipPosition}
+                    onChange={(e) => setOfferInternshipPosition(e.target.value)}
+                    placeholder="e.g. N8N Automation"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Starting Date <span className="text-rose-500">*</span>
@@ -699,7 +804,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                     required
                     value={offerStartDate}
                     onChange={(e) => setOfferStartDate(e.target.value)}
-                    placeholder="01 July, 2026"
+                    placeholder="e.g. 01 July, 2026"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
                   />
                 </div>
@@ -713,33 +818,55 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                     required
                     value={offerEndDate}
                     onChange={(e) => setOfferEndDate(e.target.value)}
-                    placeholder="01 January, 2027"
+                    placeholder="e.g. 01 January, 2027"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Stipend <span className="text-rose-500">*</span>
+                    Stipend Amount <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    value={offerStipend}
-                    onChange={(e) => setOfferStipend(e.target.value)}
-                    placeholder="5,000 - 7,000 (Based on your Performance)"
+                    value={offerStipendAmount}
+                    onChange={(e) => setOfferStipendAmount(e.target.value)}
+                    placeholder="e.g. 5,000 - 7,000"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Stipend Conditions / Notes
+                  </label>
+                  <input
+                    type="text"
+                    value={offerStipendConditions}
+                    onChange={(e) => setOfferStipendConditions(e.target.value)}
+                    placeholder="e.g. (Based on your Performance)"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 gap-4 pt-2">
+            {/* Section 5: Terms & Conditions */}
+            <div className="space-y-4 pt-2 border-t border-slate-200">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <ScrollText className="w-3.5 h-3.5 text-[#0080FF]" />
+                <span>5. Terms &amp; Conditions</span>
+              </h3>
+
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Employment Bond Clause
+                    1. Employment Bond Terms <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={2}
+                    required
                     value={offerBond}
                     onChange={(e) => setOfferBond(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
@@ -748,10 +875,11 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Termination Clause
+                    2. Termination Clause <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={2}
+                    required
                     value={offerTermination}
                     onChange={(e) => setOfferTermination(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
@@ -760,15 +888,67 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
               </div>
             </div>
 
-            {/* Signatures */}
+            {/* Section 6: Signatories & Company */}
             <div className="space-y-4 pt-2 border-t border-slate-200">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 <Building2 className="w-3.5 h-3.5 text-[#0080FF]" />
-                <span>4. Signatories &amp; Authority</span>
+                <span>6. Signatories &amp; Company Authority</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Employee Signatory Name
+                  </label>
+                  <input
+                    type="text"
+                    value={offerEmployeeName}
+                    onChange={(e) => setOfferEmployeeName(e.target.value)}
+                    placeholder="e.g. Vedant"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Employee Signature Placeholder
+                  </label>
+                  <input
+                    type="text"
+                    value={offerEmployeeSignatureText}
+                    onChange={(e) => setOfferEmployeeSignatureText(e.target.value)}
+                    placeholder="[Date&Signature]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Director Name
+                  </label>
+                  <input
+                    type="text"
+                    value={offerDirectorName}
+                    onChange={(e) => setOfferDirectorName(e.target.value)}
+                    placeholder="e.g. Anirudh Hatwar"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Director Designation / Organization
+                  </label>
+                  <input
+                    type="text"
+                    value={offerDirectorDesignation}
+                    onChange={(e) => setOfferDirectorDesignation(e.target.value)}
+                    placeholder="CosmoGeek Software Solutions Private Limited"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Issuing Company Name
                   </label>
@@ -779,24 +959,19 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Authorized Signatory Label
-                  </label>
-                  <input
-                    type="text"
-                    value={offerAuthSign}
-                    onChange={(e) => setOfferAuthSign(e.target.value)}
-                    placeholder="Authorized Person’s Sign"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-[#0080FF]"
-                  />
-                </div>
               </div>
             </div>
 
+            {/* Strict Notice */}
+            <div className="rounded-xl bg-amber-50/70 border border-amber-200 p-3 text-xs text-amber-900 flex items-start gap-2">
+              <span className="font-bold">Notice:</span>
+              <span>
+                Offer letters are official employment agreements generated as standalone PDF documents without public QR verification or scanner links.
+              </span>
+            </div>
+
             {/* Submit */}
-            <div className="pt-4 border-t border-slate-200">
+            <div className="pt-2 border-t border-slate-200">
               <button
                 type="submit"
                 disabled={submitting}
@@ -805,12 +980,12 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                 {submitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Generating Official DOCX Document...</span>
+                    <span>Compiling Official PDF Offer Letter...</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span>Generate &amp; Download Offer Letter (.docx)</span>
+                    <span>Generate &amp; Download Offer Letter PDF</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

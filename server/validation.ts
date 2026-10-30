@@ -47,17 +47,32 @@ export const CertificateInputSchema = z.object({
 });
 
 export const OfferLetterSchema = z.object({
+  cinNumber: z.string().trim().optional().default('U62091MH2025PTC459728'),
+  letterDate: z.string().trim().min(2, 'Letter date is required').default('30/06/2026'),
   recipientName: z.string().trim().min(2, 'Candidate full name is required'),
-  letterDate: z.string().trim().min(2, 'Letter date is required'),
   subject: z.string().trim().min(2, 'Subject line is required').default('Employment Offer Letter For N8N Automation'),
+  greetingName: z.string().trim().optional(),
   position: z.string().trim().min(2, 'Position / internship role is required').default('N8N Automation Intern'),
   companyName: z.string().trim().min(2, 'Company name is required').default('Cosmogeek Software Solutions Pvt. Ltd.'),
-  letterBody: z.string().trim().optional(),
-  startDate: z.string().trim().min(2, 'Starting date is required'),
-  endDate: z.string().trim().min(2, 'Ending date is required'),
-  stipend: z.string().trim().min(1, 'Stipend is required').default('5,000 - 7,000 (Based on your Performance)'),
-  employmentBond: z.string().trim().optional().default('Upon confirmation as a full-time employee, you agree to commit to a minimum employment period of 6 months.'),
-  terminationClause: z.string().trim().optional().default('Cosmogeek Software Solutions reserves the right to terminate your internship or full-time employment at any point, based on performance, conduct, or business needs.'),
+  letterBody: z.string().trim().optional().default(
+    'We are pleased to offer you the position of N8N Automation Intern at Cosmogeek Software Solutions Pvt. Ltd. We were impressed with your skills and believe that your passion and creativity will be a valuable additional to our team.'
+  ),
+  internshipPosition: z.string().trim().optional(),
+  startDate: z.string().trim().min(2, 'Starting date is required').default('01 July, 2026'),
+  endDate: z.string().trim().min(2, 'Ending date is required').default('01 January, 2027'),
+  stipendAmount: z.string().trim().optional(),
+  stipendConditions: z.string().trim().optional(),
+  stipend: z.string().trim().optional().default('5,000 - 7,000 (Based on your Performance)'),
+  employmentBond: z.string().trim().optional().default(
+    'Upon confirmation as a full-time employee, you agree to commit to a minimum employment period of 6 months.'
+  ),
+  terminationClause: z.string().trim().optional().default(
+    'Cosmogeek Software Solutions reserves the right to terminate your internship or full-time employment at any point, based on performance, conduct, or business needs.'
+  ),
+  employeeName: z.string().trim().optional(),
+  employeeSignatureText: z.string().trim().optional().default('[Date&Signature]'),
+  directorName: z.string().trim().optional().default('Anirudh Hatwar'),
+  directorDesignation: z.string().trim().optional().default('CosmoGeek Software Solutions Private Limited'),
   authorizedPersonName: z.string().trim().optional().default('Authorized Person’s Sign'),
 });
 

@@ -13,6 +13,7 @@ import {
   inspectPdfTemplate,
   generateCertificatePdf,
   generateCosmosDigitalCertificatePdf,
+  generateOfferLetterPdf,
 } from '../../server/pdfEngine.js';
 import {
   generateOfferLetterDocx,
@@ -187,6 +188,49 @@ test('generateCosmosDigitalDocx creates valid DOCX certificate preserving master
   // Verify PK header
   assert.equal(result.docxBuffer[0], 0x50);
   assert.equal(result.docxBuffer[1], 0x4b);
+
+  // Clean up test file
+  if (fs.existsSync(result.fullPath)) {
+    fs.unlinkSync(result.fullPath);
+  }
+});
+
+
+test('generateOfferLetterPdf creates official PDF from CosmoGeek Professional template without QR code', async () => {
+  const result = await generateOfferLetterPdf({
+    id: 'test_offer_candidate_001',
+    cinNumber: 'U62091MH2025PTC459728',
+    letterDate: '30/06/2026',
+    recipientName: 'Rohit Kulkarni',
+    subject: 'Employment Offer Letter For Full Stack Developer',
+    greetingName: 'Rohit',
+    position: 'Full Stack Developer Intern',
+    companyName: 'Cosmogeek Software Solutions Pvt. Ltd.',
+    letterBody: 'We are pleased to offer you the position of Full Stack Developer Intern at Cosmogeek Software Solutions Pvt. Ltd.',
+    internshipPosition: 'Full Stack Developer',
+    startDate: '01 July, 2026',
+    endDate: '01 January, 2027',
+    stipend: '10,000 / month',
+    employmentBond: 'Minimum employment period of 6 months upon confirmation.',
+    terminationClause: 'Standard termination clause applies.',
+    employeeName: 'Rohit',
+    employeeSignatureText: '[Date&Signature]',
+    directorName: 'Anirudh Hatwar',
+    directorDesignation: 'CosmoGeek Software Solutions Private Limited',
+  });
+
+  assert.ok(result.pdfBuffer.length > 50000, 'Generated Offer Letter PDF must be non-empty and retain background assets');
+  assert.ok(fs.existsSync(result.fullPath), 'PDF file must be saved in storage/offer-letters');
+
+  const pdfDoc = await PDFDocument.load(result.pdfBuffer);
+  assert.equal(pdfDoc.getPageCount(), 1, 'Offer letter must be a 1-page document');
+  const page = pdfDoc.getPage(0);
+  assert.equal(page.getWidth(), 612, 'Must be US Letter width 612 pt');
+  assert.equal(page.getHeight(), 792, 'Must be US Letter height 792 pt');
+
+  // Verify that the template file remains intact
+  const baseTemplateStats = fs.statSync('templates/offer-letter-base.pdf');
+  assert.ok(baseTemplateStats.size > 50000, 'Base template must remain intact');
 
   // Clean up test file
   if (fs.existsSync(result.fullPath)) {

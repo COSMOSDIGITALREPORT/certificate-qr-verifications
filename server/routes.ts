@@ -40,7 +40,7 @@ import {
   DEFAULT_CONTENT_BODY,
   formatDateToIndianStandard,
 } from './validation.js';
-import { generateCertificatePdf, generateCosmosDigitalCertificatePdf, inspectPdfTemplate } from './pdfEngine.js';
+import { generateCertificatePdf, generateCosmosDigitalCertificatePdf, generateOfferLetterPdf, inspectPdfTemplate } from './pdfEngine.js';
 import { generateOfferLetterDocx, generateCosmosDigitalDocx } from './docxEngine.js';
 import { generateQrDataUrl } from './qr.js';
 import { Certificate, PublicVerificationResult } from '../src/types/index.js';
@@ -438,7 +438,8 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
 });
 
 /**
- * Generate Offer Letter DOCX dynamically from master template
+ * Generate Offer Letter PDF dynamically from the new CosmoGeek Professional PDF template
+ * STRICT: No QR code, scanner link, or verification record is added.
  */
 apiRouter.post('/documents/offer-letter', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const parseResult = OfferLetterSchema.safeParse(req.body);
@@ -455,37 +456,45 @@ apiRouter.post('/documents/offer-letter', requireAdmin, async (req: Request, res
   const docId = `offer_${Date.now()}_${randomSuffix}`;
 
   try {
-    const result = await generateOfferLetterDocx({
+    const pdfResult = await generateOfferLetterPdf({
       id: docId,
-      recipientName: input.recipientName,
+      cinNumber: input.cinNumber,
       letterDate: input.letterDate,
+      recipientName: input.recipientName,
       subject: input.subject,
+      greetingName: input.greetingName,
       position: input.position,
       companyName: input.companyName,
       letterBody: input.letterBody,
+      internshipPosition: input.internshipPosition,
       startDate: input.startDate,
       endDate: input.endDate,
+      stipendAmount: input.stipendAmount,
+      stipendConditions: input.stipendConditions,
       stipend: input.stipend,
       employmentBond: input.employmentBond,
       terminationClause: input.terminationClause,
-      authorizedPersonName: input.authorizedPersonName,
+      employeeName: input.employeeName,
+      employeeSignatureText: input.employeeSignatureText,
+      directorName: input.directorName,
+      directorDesignation: input.directorDesignation,
     });
 
-    const filename = path.basename(result.fullPath);
+    const filename = pdfResult.filename;
 
     res.status(201).json({
       success: true,
       documentId: docId,
       filename,
-      downloadUrl: `/api/download/docx/${filename}`,
-      relativePath: result.relativePath,
+      downloadUrl: `/api/download/offer-letter/${filename}`,
+      relativePath: pdfResult.relativePath,
       recipientName: input.recipientName,
       position: input.position,
       letterDate: input.letterDate,
     });
   } catch (err: any) {
-    console.error('Offer letter generation error:', err);
-    res.status(500).json({ error: err?.message || 'Failed to generate offer letter document' });
+    console.error('Offer letter PDF generation error:', err);
+    res.status(500).json({ error: err?.message || 'Failed to generate offer letter PDF document' });
   }
 });
 
@@ -781,6 +790,30 @@ apiRouter.get('/download/:certificateNumber', async (req: Request, res: Response
     stream.pipe(res);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to stream certificate PDF' });
+  }
+});
+
+apiRouter.get('/download/offer-letter/:filename', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rawName = path.basename(req.params.filename);
+    const cleanName = rawName.replace(/[^a-zA-Z0-9_.-]/g, '');
+
+    const offerDir = path.resolve(process.cwd(), 'storage/offer-letters');
+    const targetFile = path.join(offerDir, cleanName);
+
+    if (!targetFile.startsWith(offerDir) || !fs.existsSync(targetFile)) {
+      res.status(404).json({ error: 'Offer Letter PDF file not found' });
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${cleanName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+    const stream = fs.createReadStream(targetFile);
+    stream.pipe(res);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to stream offer letter PDF' });
   }
 });
 
