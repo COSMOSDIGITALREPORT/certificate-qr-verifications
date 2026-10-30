@@ -382,34 +382,40 @@ export async function generateCertificatePdf(
     const qrBuffer = await generateQrPngBuffer(verificationUrl, 240);
     const embeddedQrImage = await pdfDoc.embedPng(qrBuffer);
 
-    const qrX = 328;
-    const qrY = 145;
-    const qrSize = 58;
+    // Centered between vertical green lines (x=316.8 and x=355.4) above circular logo
+    const ribbonCenterX = 336.1;
+    const qrSize = 31;
+    const cardSize = 34;
+    const cardX = ribbonCenterX - cardSize / 2; // 319.1 pt (between green lines x=316.8 and x=355.4)
+    const cardY = 177.0;
+    const qrX = ribbonCenterX - qrSize / 2; // 320.6 pt
+    const qrY = cardY + (cardSize - qrSize) / 2; // 178.5 pt
 
-    // Protective white card with teal border
+    // Clean white backing card for optimal contrast & 360-degree quiet zone
     page.drawRectangle({
-      x: qrX - 2,
-      y: qrY - 14,
-      width: qrSize + 4,
-      height: qrSize + 18,
+      x: cardX,
+      y: cardY,
+      width: cardSize,
+      height: cardSize,
       color: pureWhite,
-      borderColor: dateTeal,
-      borderWidth: 0.8,
     });
 
     page.drawImage(embeddedQrImage, {
       x: qrX,
-      y: qrY - 2,
+      y: qrY,
       width: qrSize,
       height: qrSize,
     });
 
-    page.drawText('SCAN TO VERIFY', {
-      x: qrX + 3.5,
-      y: qrY - 11,
-      size: 5.5,
+    // VERIFY label centered below QR code
+    const labelText = 'VERIFY';
+    const labelWidth = fontBold.widthOfTextAtSize(labelText, 5.0);
+    page.drawText(labelText, {
+      x: ribbonCenterX - labelWidth / 2,
+      y: cardY - 8.5,
+      size: 5.0,
       font: fontBold,
-      color: tealAccent,
+      color: pureWhite,
     });
 
     // 8. Embed Director's Digital Signature directly above "Anirudh Hatwar"
