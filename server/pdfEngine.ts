@@ -599,13 +599,19 @@ export async function generateCosmosDigitalCertificatePdf(
       color: tealColor,
     });
 
-    // 3. Program intro (8 pt Regular, matching original template)
+    // 3. Program intro (Calibrated to 7.1 pt to match exact original template line width of 224 pt)
     const duration = cert.internshipDuration || '3 - months';
     const introText = `For Successful Completion Of ${duration} Course & Training Program in`;
+    let introSize = 7.1;
+    const maxIntroWidth = 225; // Original template text boundary (ending at x ≈ 280 pt, well clear of ribbon at 309 pt)
+    const currentIntroWidth = fontRegular.widthOfTextAtSize(introText, introSize);
+    if (currentIntroWidth > maxIntroWidth) {
+      introSize = Number((introSize * (maxIntroWidth / currentIntroWidth)).toFixed(2));
+    }
     page.drawText(introText, {
       x: 56.5,
       y: 188.8,
-      size: 8,
+      size: introSize,
       font: fontRegular,
       color: blackColor,
     });
