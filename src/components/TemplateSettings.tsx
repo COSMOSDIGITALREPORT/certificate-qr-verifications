@@ -34,7 +34,7 @@ export const TemplateSettings: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <SlidersHorizontal className="w-5 h-5 text-emerald-600" />
+          <SlidersHorizontal className="w-5 h-5 text-[#0080FF]" />
           <span>Certificate PDF Template &amp; Coordinate Engine</span>
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
@@ -46,10 +46,10 @@ export const TemplateSettings: React.FC = () => {
       <div className="rounded-2xl bg-white border border-slate-200 p-6 space-y-5 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-            <FileCheck className="w-4 h-4 text-emerald-600" />
+            <FileCheck className="w-4 h-4 text-[#0080FF]" />
             <span>Master Template Inspection</span>
           </span>
-          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+          <span className="text-[10px] font-mono text-[#003B73] bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
             PROTECTED VECTOR ASSET
           </span>
         </div>

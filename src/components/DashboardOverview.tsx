@@ -82,7 +82,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={() => onNavigate('generate')}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B73] hover:bg-[#002b54] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
           >
             <FilePlus2 className="w-4 h-4" />
             <span>Issue Certificate</span>
@@ -172,7 +172,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
           <button
             onClick={() => onNavigate('certificates')}
-            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition-colors cursor-pointer"
+            className="text-xs font-semibold text-[#0080FF] hover:text-[#003B73] flex items-center gap-1 transition-colors cursor-pointer"
           >
             <span>View All</span>
             <TableProperties className="w-3.5 h-3.5" />

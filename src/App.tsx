@@ -138,7 +138,7 @@ export default function App() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-sky-100 selection:text-[#003B73]">
       
       {/* Top Navbar */}
       <Navbar
@@ -179,7 +179,7 @@ export default function App() {
 
         {!authChecked ? (
           <div className="min-h-[50vh] flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin"></div>
+            <div className="w-8 h-8 rounded-full border-2 border-[#003B73] border-t-transparent animate-spin"></div>
           </div>
         ) : !adminUser ? (
           <AdminLogin

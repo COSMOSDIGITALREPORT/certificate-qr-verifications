@@ -106,7 +106,7 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between py-6 px-3 sm:px-6 lg:px-8 selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between py-6 px-3 sm:px-6 lg:px-8 selection:bg-sky-100 selection:text-[#003B73]">
       <div className="max-w-xl mx-auto w-full space-y-6">
         
         {/* Top Header / Company Badge */}
@@ -121,9 +121,11 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
             </button>
           ) : (
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
-                CG
-              </div>
+              <img
+                src="/assets/cosmogeek-emblem.png"
+                alt="Cosmogeek Emblem"
+                className="w-7 h-7 object-contain drop-shadow-xs"
+              />
               <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">
                 Official Credential Registry
               </span>
@@ -138,7 +140,7 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
 
         {/* Verification Lookup Input */}
         <form onSubmit={handleSearchSubmit} className="relative">
-          <div className="flex items-center rounded-xl bg-white border border-slate-200 shadow-sm px-3.5 py-1.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-50 transition-all">
+          <div className="flex items-center rounded-xl bg-white border border-slate-200 shadow-sm px-3.5 py-1.5 focus-within:border-[#0080FF] focus-within:ring-2 focus-within:ring-sky-100 transition-all">
             <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
             <input
               type="text"
@@ -149,7 +151,7 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({
             />
             <button
               type="submit"
-              className="ml-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+              className="ml-2 px-3.5 py-1.5 rounded-lg bg-[#003B73] hover:bg-[#002b54] text-white font-semibold text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
             >
               Verify
             </button>

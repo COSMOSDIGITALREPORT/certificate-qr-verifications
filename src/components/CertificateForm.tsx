@@ -278,7 +278,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <FilePlus2 className="w-5 h-5 text-emerald-600" />
+            <FilePlus2 className="w-5 h-5 text-[#0080FF]" />
             <span>Add Student &amp; Generate Certificate</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -286,9 +286,9 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono self-start sm:self-auto">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-50 border border-sky-200 text-[#003B73] text-xs font-mono self-start sm:self-auto">
           <span>Assigned Number:</span>
-          <span className="font-bold text-emerald-700">{loadingNumber ? '...' : nextNumber}</span>
+          <span className="font-bold text-[#003B73]">{loadingNumber ? '...' : nextNumber}</span>
         </div>
       </div>
 
@@ -304,7 +304,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
         {/* Recipient Details Section */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-            <User className="w-3.5 h-3.5 text-emerald-600" />
+            <User className="w-3.5 h-3.5 text-[#0080FF]" />
             <span>1. Student &amp; Internship Information</span>
           </h3>
 
@@ -408,7 +408,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
         {/* Timeline & Duration Section */}
         <div className="space-y-4 pt-2 border-t border-slate-200">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+            <Calendar className="w-3.5 h-3.5 text-[#0080FF]" />
             <span>2. Internship Timeline &amp; Duration</span>
           </h3>
 
@@ -451,7 +451,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
                 <button
                   type="button"
                   onClick={() => setManualDurationOverride(!manualDurationOverride)}
-                  className="text-[10px] font-semibold text-emerald-700 hover:underline cursor-pointer"
+                  className="text-[10px] font-semibold text-[#0080FF] hover:text-[#003B73] hover:underline cursor-pointer"
                 >
                   {manualDurationOverride ? 'Auto Calculate' : 'Custom Override'}
                 </button>
@@ -475,7 +475,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
         {/* Company & Signatory Section */}
         <div className="space-y-4 pt-2 border-t border-slate-200">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-            <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+            <Building2 className="w-3.5 h-3.5 text-[#0080FF]" />
             <span>3. Issuing Company, Audit &amp; Signatory Authorities</span>
           </h3>
 
@@ -603,7 +603,7 @@ export const CertificateForm: React.FC<CertificateFormProps> = ({
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 px-6 rounded-xl bg-[#003B73] hover:bg-[#002b54] text-white font-bold text-sm shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {submitting ? (
               <>
