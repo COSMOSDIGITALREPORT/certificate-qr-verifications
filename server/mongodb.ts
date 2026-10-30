@@ -15,6 +15,7 @@ export interface IStudentCertificateDoc extends Document {
   id: string;
   certificateNumber: string;
   verificationId: string;
+  documentType?: string;
   studentName?: string;
   recipientName: string;
   recipientEmail?: string | null;
@@ -37,6 +38,7 @@ export interface IStudentCertificateDoc extends Document {
   verificationUrl: string;
   verificationPath: string;
   pdfPath: string;
+  docxPath?: string | null;
   issuedAt: string;
   revokedAt?: string | null;
   revocationReason?: string | null;
@@ -49,6 +51,7 @@ const StudentCertificateSchema = new Schema<IStudentCertificateDoc>(
     id: { type: String, required: true, unique: true },
     certificateNumber: { type: String, required: true, unique: true, index: true, trim: true },
     verificationId: { type: String, required: true, unique: true, index: true, trim: true },
+    documentType: { type: String, default: 'COSMOGEEK_CERTIFICATE', index: true, trim: true },
     studentName: { type: String, trim: true },
     recipientName: { type: String, required: true, trim: true },
     recipientEmail: { type: String, trim: true, default: null },
@@ -71,6 +74,7 @@ const StudentCertificateSchema = new Schema<IStudentCertificateDoc>(
     verificationUrl: { type: String, required: true, trim: true },
     verificationPath: { type: String, required: true, trim: true },
     pdfPath: { type: String, required: true, trim: true },
+    docxPath: { type: String, default: null, trim: true },
     issuedAt: { type: String, required: true },
     revokedAt: { type: String, default: null },
     revocationReason: { type: String, default: null },

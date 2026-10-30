@@ -9,6 +9,7 @@ export const DEFAULT_CONTENT_BODY =
   'The professional has demonstrated a satisfactory initiative and a commitment for deepening their skills and advancing their career. Well done!';
 
 export const CertificateInputSchema = z.object({
+  documentType: z.enum(['COSMOGEEK_CERTIFICATE', 'COSMOS_DIGITAL_CERTIFICATE', 'OFFER_LETTER']).optional().default('COSMOGEEK_CERTIFICATE'),
   recipientName: z.string().trim().min(2, 'Recipient name must have at least 2 characters'),
   recipientEmail: z.string().trim().email('Invalid email address').optional().or(z.literal('')),
   designation: z.string().trim().min(2, 'Designation / role is required'),
@@ -26,6 +27,16 @@ export const CertificateInputSchema = z.object({
   issueLocation: z.string().trim().optional().default('Nagpur, Maharashtra, India'),
   contentBody: z.string().trim().optional(),
   additionalNotes: z.string().trim().optional(),
+  // Offer Letter fields (optional in base certificate schema):
+  letterDate: z.string().trim().optional(),
+  subject: z.string().trim().optional(),
+  position: z.string().trim().optional(),
+  companyName: z.string().trim().optional(),
+  letterBody: z.string().trim().optional(),
+  stipend: z.string().trim().optional(),
+  employmentBond: z.string().trim().optional(),
+  terminationClause: z.string().trim().optional(),
+  authorizedPersonName: z.string().trim().optional(),
 }).refine((data) => {
   const start = new Date(data.startDate).getTime();
   const end = new Date(data.endDate).getTime();
@@ -33,6 +44,21 @@ export const CertificateInputSchema = z.object({
 }, {
   message: 'End date must be on or after start date',
   path: ['endDate'],
+});
+
+export const OfferLetterSchema = z.object({
+  recipientName: z.string().trim().min(2, 'Candidate full name is required'),
+  letterDate: z.string().trim().min(2, 'Letter date is required'),
+  subject: z.string().trim().min(2, 'Subject line is required').default('Employment Offer Letter For N8N Automation'),
+  position: z.string().trim().min(2, 'Position / internship role is required').default('N8N Automation Intern'),
+  companyName: z.string().trim().min(2, 'Company name is required').default('Cosmogeek Software Solutions Pvt. Ltd.'),
+  letterBody: z.string().trim().optional(),
+  startDate: z.string().trim().min(2, 'Starting date is required'),
+  endDate: z.string().trim().min(2, 'Ending date is required'),
+  stipend: z.string().trim().min(1, 'Stipend is required').default('5,000 - 7,000 (Based on your Performance)'),
+  employmentBond: z.string().trim().optional().default('Upon confirmation as a full-time employee, you agree to commit to a minimum employment period of 6 months.'),
+  terminationClause: z.string().trim().optional().default('Cosmogeek Software Solutions reserves the right to terminate your internship or full-time employment at any point, based on performance, conduct, or business needs.'),
+  authorizedPersonName: z.string().trim().optional().default('Authorized Person’s Sign'),
 });
 
 export const LoginInputSchema = z.object({

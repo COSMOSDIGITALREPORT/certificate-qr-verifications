@@ -137,6 +137,12 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
   try {
     dbInstance.run('ALTER TABLE certificates ADD COLUMN contentBody TEXT;');
   } catch {}
+  try {
+    dbInstance.run('ALTER TABLE certificates ADD COLUMN documentType TEXT;');
+  } catch {}
+  try {
+    dbInstance.run('ALTER TABLE certificates ADD COLUMN docxPath TEXT;');
+  } catch {}
 
   // Synchronize or seed default admin in SQLite
   const defaultUsername = (process.env.ADMIN_DEFAULT_USERNAME || 'Anirudh Hatwar').trim();
@@ -254,6 +260,7 @@ function rowToCertificate(row: Record<string, any>): Certificate {
     id: String(row.id),
     certificateNumber: String(row.certificateNumber),
     verificationId: String(row.verificationId),
+    documentType: (row.documentType as any) || 'COSMOGEEK_CERTIFICATE',
     recipientName: String(row.recipientName),
     recipientEmail: row.recipientEmail ? String(row.recipientEmail) : null,
     designation: String(row.designation),
@@ -275,6 +282,7 @@ function rowToCertificate(row: Record<string, any>): Certificate {
     verificationUrl: row.verificationUrl ? String(row.verificationUrl) : undefined,
     verificationPath: String(row.verificationPath),
     pdfPath: String(row.pdfPath),
+    docxPath: row.docxPath ? String(row.docxPath) : null,
     issuedAt: String(row.issuedAt),
     revokedAt: row.revokedAt ? String(row.revokedAt) : null,
     revocationReason: row.revocationReason ? String(row.revocationReason) : null,
@@ -554,16 +562,17 @@ export async function insertCertificate(cert: Certificate): Promise<Certificate>
   try {
     db.run(
       `INSERT INTO certificates (
-        id, certificateNumber, verificationId, recipientName, recipientEmail,
+        id, certificateNumber, verificationId, documentType, recipientName, recipientEmail,
         designation, department, certificateType, internshipDuration, startDate, endDate,
         issuingCompany, signatoryName, signatoryRole, initiatorName, approverName,
         approverDesignation, issueLocation, additionalNotes, contentBody, status, verificationUrl, verificationPath,
-        pdfPath, issuedAt, revokedAt, revocationReason, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pdfPath, docxPath, issuedAt, revokedAt, revocationReason, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         cert.id,
         cert.certificateNumber,
         cert.verificationId,
+        cert.documentType || 'COSMOGEEK_CERTIFICATE',
         cert.recipientName,
         cert.recipientEmail || null,
         cert.designation,
@@ -585,6 +594,7 @@ export async function insertCertificate(cert: Certificate): Promise<Certificate>
         cert.verificationUrl || null,
         cert.verificationPath,
         cert.pdfPath,
+        cert.docxPath || null,
         cert.issuedAt,
         cert.revokedAt || null,
         cert.revocationReason || null,

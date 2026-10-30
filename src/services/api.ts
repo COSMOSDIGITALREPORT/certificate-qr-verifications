@@ -6,6 +6,7 @@
 import {
   Certificate,
   CertificateInput,
+  OfferLetterInput,
   DashboardMetrics,
   PublicVerificationResult,
   AdminUser,
@@ -181,11 +182,28 @@ export const api = {
     certificate: Certificate;
     verificationUrl: string;
     downloadUrl: string;
+    docxDownloadUrl?: string;
     qrDataUrl: string;
     isLocalhostUrl?: boolean;
     warning?: string;
   }> {
     return fetchJson('/api/certificates/generate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  async generateOfferLetter(input: OfferLetterInput): Promise<{
+    success: boolean;
+    documentId: string;
+    filename: string;
+    downloadUrl: string;
+    relativePath: string;
+    recipientName: string;
+    position: string;
+    letterDate: string;
+  }> {
+    return fetchJson('/api/documents/offer-letter', {
       method: 'POST',
       body: JSON.stringify(input),
     });

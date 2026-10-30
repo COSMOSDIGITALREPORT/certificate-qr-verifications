@@ -34,11 +34,14 @@ import {
 } from './auth.js';
 import {
   CertificateInputSchema,
+  OfferLetterSchema,
   LoginInputSchema,
   RevokeInputSchema,
   DEFAULT_CONTENT_BODY,
+  formatDateToIndianStandard,
 } from './validation.js';
-import { generateCertificatePdf, inspectPdfTemplate } from './pdfEngine.js';
+import { generateCertificatePdf, generateCosmosDigitalCertificatePdf, inspectPdfTemplate } from './pdfEngine.js';
+import { generateOfferLetterDocx, generateCosmosDigitalDocx } from './docxEngine.js';
 import { generateQrDataUrl } from './qr.js';
 import { Certificate, PublicVerificationResult } from '../src/types/index.js';
 
@@ -337,10 +340,14 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
 
     const fullVerificationUrl = `${baseUrl.replace(/\/$/, '')}${verificationPath}`;
 
+    const docType = input.documentType || 'COSMOGEEK_CERTIFICATE';
+    const isCosmosDigital = docType === 'COSMOS_DIGITAL_CERTIFICATE';
+
     const newCert: Certificate = {
       id: certId,
       certificateNumber,
       verificationId,
+      documentType: docType,
       recipientName: input.recipientName,
       recipientEmail: input.recipientEmail || null,
       designation: input.designation,
@@ -349,7 +356,7 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
       internshipDuration: input.internshipDuration,
       startDate: input.startDate,
       endDate: input.endDate,
-      issuingCompany: input.issuingCompany || 'Cosmogeek Software Solutions Pvt. Ltd.',
+      issuingCompany: isCosmosDigital ? 'Cosmos Digital' : (input.issuingCompany || 'Cosmogeek Software Solutions Pvt. Ltd.'),
       signatoryName: input.signatoryName || 'Anirudh Hatwar',
       signatoryRole: input.signatoryRole || 'Director / Authorized Signatory',
       initiatorName: input.initiatorName || null,
@@ -357,11 +364,14 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
       approverDesignation: input.approverDesignation || null,
       issueLocation: input.issueLocation || 'Nagpur, Maharashtra, India',
       additionalNotes: input.additionalNotes || null,
-      contentBody: input.contentBody?.trim() || DEFAULT_CONTENT_BODY,
+      contentBody: input.contentBody?.trim() || (isCosmosDigital
+        ? 'The participant has completed the prescribed course curriculum covering relevant concepts, tools, and practical learning activities as applicable to the program. Well done!'
+        : DEFAULT_CONTENT_BODY),
       status: 'VALID',
       verificationUrl: fullVerificationUrl,
       verificationPath,
       pdfPath: `storage/certificates/${cleanNum}.pdf`,
+      docxPath: isCosmosDigital ? `storage/certificates/${cleanNum}.docx` : null,
       issuedAt: now,
       createdAt: now,
       updatedAt: now,
@@ -371,7 +381,28 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
     const saved = await insertCertificate(newCert);
 
     // 2. Generate PDF with embedded QR Code using the saved certificate record
-    const pdfResult = await generateCertificatePdf(saved, baseUrl);
+    let pdfResult;
+    if (isCosmosDigital) {
+      pdfResult = await generateCosmosDigitalCertificatePdf(saved, baseUrl);
+      try {
+        await generateCosmosDigitalDocx({
+          id: saved.id,
+          recipientName: saved.recipientName,
+          certificateType: saved.certificateType,
+          courseName: saved.designation,
+          duration: saved.internshipDuration,
+          contentBody: saved.contentBody || '',
+          startDate: formatDateToIndianStandard(saved.startDate),
+          endDate: formatDateToIndianStandard(saved.endDate),
+          certificateNumber: saved.certificateNumber,
+          directorName: saved.signatoryName,
+        });
+      } catch (docxErr) {
+        console.warn('[Cosmos Digital] DOCX creation note:', docxErr);
+      }
+    } else {
+      pdfResult = await generateCertificatePdf(saved, baseUrl);
+    }
 
     // 3. Generate QR Data URL for instant dashboard preview
     const qrDataUrl = await generateQrDataUrl(fullVerificationUrl, 300);
@@ -390,6 +421,7 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
       certificate: saved,
       verificationUrl: fullVerificationUrl,
       downloadUrl: `/api/download/${cleanNum}`,
+      docxDownloadUrl: isCosmosDigital ? `/api/download/docx/${cleanNum}.docx` : undefined,
       qrDataUrl,
       isLocalhostUrl: isLocalhost,
       warning: isLocalhost
@@ -403,6 +435,59 @@ apiRouter.post('/certificates/generate', requireAdmin, async (req: Request, res:
       error: err?.message || 'Failed to generate certificate PDF or record',
     });
   }
+});
+
+/**
+ * Generate Offer Letter DOCX dynamically from master template
+ */
+apiRouter.post('/documents/offer-letter', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const parseResult = OfferLetterSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    res.status(400).json({
+      error: parseResult.error.issues[0]?.message || 'Validation failed',
+      issues: parseResult.error.issues,
+    });
+    return;
+  }
+
+  const input = parseResult.data;
+  const randomSuffix = crypto.randomBytes(3).toString('hex');
+  const docId = `offer_${Date.now()}_${randomSuffix}`;
+
+  try {
+    const result = await generateOfferLetterDocx({
+      id: docId,
+      recipientName: input.recipientName,
+      letterDate: input.letterDate,
+      subject: input.subject,
+      position: input.position,
+      companyName: input.companyName,
+      letterBody: input.letterBody,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      stipend: input.stipend,
+      employmentBond: input.employmentBond,
+      terminationClause: input.terminationClause,
+      authorizedPersonName: input.authorizedPersonName,
+    });
+
+    const filename = path.basename(result.fullPath);
+
+    res.status(201).json({
+      success: true,
+      documentId: docId,
+      filename,
+      downloadUrl: `/api/download/docx/${filename}`,
+      relativePath: result.relativePath,
+      recipientName: input.recipientName,
+      position: input.position,
+      letterDate: input.letterDate,
+    });
+  } catch (err: any) {
+    console.error('Offer letter generation error:', err);
+    res.status(500).json({ error: err?.message || 'Failed to generate offer letter document' });
+  }
+});
 });
 
 apiRouter.post('/certificates/:id/regenerate-pdf', requireAdmin, async (req: Request, res: Response): Promise<void> => {
@@ -697,6 +782,38 @@ apiRouter.get('/download/:certificateNumber', async (req: Request, res: Response
     stream.pipe(res);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to stream certificate PDF' });
+  }
+});
+
+apiRouter.get('/download/docx/:filename', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rawName = path.basename(req.params.filename);
+    const cleanName = rawName.replace(/[^a-zA-Z0-9_.-]/g, '');
+
+    const offerDir = path.resolve(process.cwd(), 'storage/offer-letters');
+    const certDir = path.resolve(process.cwd(), 'storage/certificates');
+
+    let targetFile = path.join(offerDir, cleanName);
+    if (!fs.existsSync(targetFile)) {
+      targetFile = path.join(certDir, cleanName);
+    }
+
+    if (!fs.existsSync(targetFile)) {
+      res.status(404).json({ error: 'DOCX document file not found' });
+      return;
+    }
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+    const stream = fs.createReadStream(targetFile);
+    stream.pipe(res);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to stream DOCX document' });
   }
 });
 

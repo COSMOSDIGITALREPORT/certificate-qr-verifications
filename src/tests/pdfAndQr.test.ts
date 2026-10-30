@@ -12,7 +12,12 @@ import {
   ensureMasterTemplateExists,
   inspectPdfTemplate,
   generateCertificatePdf,
+  generateCosmosDigitalCertificatePdf,
 } from '../../server/pdfEngine.js';
+import {
+  generateOfferLetterDocx,
+  generateCosmosDigitalDocx,
+} from '../../server/docxEngine.js';
 import { generateQrPngBuffer, generateQrDataUrl } from '../../server/qr.js';
 import { Certificate } from '../types/index.js';
 
@@ -87,6 +92,101 @@ test('generateCertificatePdf generates valid PDF and embeds QR without overwriti
     templateStatsBefore.size,
     'Original template file size must remain unmodified'
   );
+
+  // Clean up test file
+  if (fs.existsSync(result.fullPath)) {
+    fs.unlinkSync(result.fullPath);
+  }
+});
+
+test('generateCosmosDigitalCertificatePdf generates valid PDF with QR and signature without modifying templates', async () => {
+  const cdCert: Certificate = {
+    id: 'cert_cd_test_123',
+    certificateNumber: '#26899',
+    verificationId: 'cd-26899-xyz789',
+    documentType: 'COSMOS_DIGITAL_CERTIFICATE',
+    recipientName: 'Aarav Sharma',
+    recipientEmail: 'aarav@example.com',
+    certificateType: 'Certificate of Completion',
+    designation: 'Full Stack Web Development',
+    internshipDuration: '3 - months',
+    startDate: '2026-06-01',
+    endDate: '2026-09-01',
+    issuingCompany: 'Cosmos Digital',
+    signatoryName: 'Anirudh Hatwar',
+    signatoryRole: 'Director',
+    issueLocation: 'Nagpur, Maharashtra, India',
+    contentBody: 'The participant has completed the prescribed course curriculum covering full-stack concepts.',
+    status: 'VALID',
+    verificationPath: '/verify/cd-26899-xyz789',
+    pdfPath: 'storage/certificates/26899.pdf',
+    issuedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const result = await generateCosmosDigitalCertificatePdf(cdCert, 'http://localhost:3000');
+  assert.ok(result.pdfBuffer.length > 50000, 'Cosmos Digital PDF must have background image rendered');
+  assert.ok(fs.existsSync(result.fullPath), 'Generated PDF file must exist in storage');
+
+  const loadedPdf = await PDFDocument.load(result.pdfBuffer);
+  assert.equal(loadedPdf.getPageCount(), 1, 'Must have 1 page');
+
+  // Clean up test file
+  if (fs.existsSync(result.fullPath)) {
+    fs.unlinkSync(result.fullPath);
+  }
+});
+
+test('generateOfferLetterDocx creates valid DOCX document preserving structure and styles', async () => {
+  const result = await generateOfferLetterDocx({
+    id: 'offer_test_doc_456',
+    recipientName: 'Rahul Verma',
+    letterDate: '30/06/2026',
+    subject: 'Employment Offer Letter For Cloud Engineer Intern',
+    position: 'Cloud Engineer Intern',
+    companyName: 'Cosmogeek Software Solutions Pvt. Ltd.',
+    letterBody: 'We are pleased to offer you the position of Cloud Engineer Intern.',
+    startDate: '01 July, 2026',
+    endDate: '01 January, 2027',
+    stipend: '8,000 / month',
+    employmentBond: 'Minimum employment period of 6 months upon confirmation.',
+    terminationClause: 'Standard termination clause applies.',
+    authorizedPersonName: 'Authorized Person Sign',
+  });
+
+  assert.ok(result.docxBuffer.length > 10000, 'Generated DOCX must contain full document with media');
+  assert.ok(fs.existsSync(result.fullPath), 'Generated DOCX must be saved to storage');
+
+  // Verify DOCX ZIP header PK (0x50, 0x4B, 0x03, 0x04)
+  assert.equal(result.docxBuffer[0], 0x50);
+  assert.equal(result.docxBuffer[1], 0x4b);
+
+  // Clean up test file
+  if (fs.existsSync(result.fullPath)) {
+    fs.unlinkSync(result.fullPath);
+  }
+});
+
+test('generateCosmosDigitalDocx creates valid DOCX certificate preserving master template', async () => {
+  const result = await generateCosmosDigitalDocx({
+    certificateNumber: '#26899',
+    recipientName: 'Priya Patel',
+    certificateType: 'Certificate of Completion',
+    courseName: 'Python Basics',
+    duration: '3 - months',
+    contentBody: 'Successfully demonstrated proficiency in Python and backend services.',
+    startDate: '2026-06-04',
+    endDate: '2026-09-06',
+    directorName: 'Anirudh Hatwar',
+  });
+
+  assert.ok(result.docxBuffer.length > 10000, 'Generated CD DOCX must be non-empty');
+  assert.ok(fs.existsSync(result.fullPath), 'Generated CD DOCX must be saved in storage/certificates');
+
+  // Verify PK header
+  assert.equal(result.docxBuffer[0], 0x50);
+  assert.equal(result.docxBuffer[1], 0x4b);
 
   // Clean up test file
   if (fs.existsSync(result.fullPath)) {

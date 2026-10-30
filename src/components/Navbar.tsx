@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Award },
-    { id: 'generate', label: 'Generate Certificate', icon: FilePlus2 },
+    { id: 'generate', label: 'Document & Certificate Generator', icon: FilePlus2 },
     { id: 'certificates', label: 'All Certificates', icon: TableProperties },
     { id: 'verify', label: 'Verification Portal', icon: ShieldCheck },
     { id: 'template', label: 'Template & Coordinates', icon: SlidersHorizontal },

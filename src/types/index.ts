@@ -5,13 +5,19 @@
 
 export type CertificateStatus = 'VALID' | 'REVOKED';
 
+export type DocumentTemplateType =
+  | 'COSMOGEEK_CERTIFICATE'
+  | 'COSMOS_DIGITAL_CERTIFICATE'
+  | 'OFFER_LETTER';
+
 export interface Certificate {
   id: string;
   certificateNumber: string; // e.g. "#26832"
   verificationId: string;    // unique alphanumeric identifier for public URL
+  documentType?: DocumentTemplateType;
   recipientName: string;
   recipientEmail?: string | null;
-  designation: string;       // e.g. "Jr. Software Developer"
+  designation: string;       // e.g. "Jr. Software Developer" or course name
   department?: string | null;// e.g. "Software Engineering", "Full Stack"
   certificateType: string;   // e.g. "Certificate of Completion"
   internshipDuration: string;// e.g. "3 months"
@@ -30,6 +36,7 @@ export interface Certificate {
   verificationUrl?: string;  // e.g. "http://192.168.101.73:3000/verify/cg-..."
   verificationPath: string;  // "/verify/cg-26832-..."
   pdfPath: string;           // "storage/certificates/26832.pdf"
+  docxPath?: string | null;  // "storage/certificates/26832.docx" or offer letter
   issuedAt: string;          // ISO string
   revokedAt?: string | null; // ISO string
   revocationReason?: string | null;
@@ -72,6 +79,7 @@ export interface PublicVerificationResult {
 }
 
 export interface CertificateInput {
+  documentType?: DocumentTemplateType;
   recipientName: string;
   recipientEmail?: string;
   designation: string;
@@ -89,6 +97,44 @@ export interface CertificateInput {
   issueLocation?: string;
   additionalNotes?: string;
   contentBody?: string;
+  // Specific to Offer Letter:
+  letterDate?: string;
+  subject?: string;
+  position?: string;
+  companyName?: string;
+  letterBody?: string;
+  stipend?: string;
+  employmentBond?: string;
+  terminationClause?: string;
+  authorizedPersonName?: string;
+}
+
+export interface OfferLetterInput {
+  recipientName: string;
+  letterDate: string;
+  subject: string;
+  position: string;
+  companyName: string;
+  letterBody?: string;
+  startDate: string;
+  endDate: string;
+  stipend: string;
+  employmentBond?: string;
+  terminationClause?: string;
+  authorizedPersonName?: string;
+}
+
+export interface CosmosDigitalCertificateInput {
+  recipientName: string;
+  recipientEmail?: string;
+  certificateType?: string;
+  courseName: string;
+  duration: string;
+  contentBody?: string;
+  startDate: string;
+  endDate: string;
+  certificateNumber?: string;
+  directorName?: string;
 }
 
 export interface DashboardMetrics {
