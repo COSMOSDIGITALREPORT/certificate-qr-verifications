@@ -569,110 +569,122 @@ export async function generateCosmosDigitalCertificatePdf(
     // -----------------------------------------------------------------
     // ORIGINAL COSMOS DIGITAL MASTER DESIGN (419.52 x 297.96 pt)
     // -----------------------------------------------------------------
-    const toPdfY = (pyY: number, fontSize = 10) => height - pyY - fontSize * 0.8;
     const tealColor = rgb(24 / 255, 138 / 255, 135 / 255); // #188a87
     const blackColor = rgb(0, 0, 0);
 
-    // 1. Certificate Title Heading
-    const titleText = (cert.certificateType || 'CERTIFICATE OF COMPLETION').toUpperCase();
+    // 1. Certificate Title Heading (12 pt Bold, exact match to original template)
+    const titleText = (cert.certificateType || 'CIRTIFICATE OF COMPLETION').toUpperCase();
     page.drawText(titleText, {
-      x: 49.6,
-      y: toPdfY(71.7, 12),
+      x: 54.2,
+      y: 218.4,
       size: 12,
       font: fontBold,
       color: blackColor,
     });
 
-    // 2. Student Full Name (in Teal #188a87)
+    // 2. Student Full Name (14 pt Bold in Teal #188a87, matching original template)
+    // Preserves 14 pt unless name length exceeds available width (preventing collision with ribbon)
     let nameSize = 14;
-    if (cert.recipientName.length > 25) nameSize = 12;
-    if (cert.recipientName.length > 35) nameSize = 10.5;
+    const nameWidth = fontBold.widthOfTextAtSize(cert.recipientName, nameSize);
+    const maxNameWidth = 240;
+    if (nameWidth > maxNameWidth) {
+      nameSize = Number((nameSize * (maxNameWidth / nameWidth)).toFixed(1));
+      if (nameSize < 10) nameSize = 10;
+    }
     page.drawText(cert.recipientName, {
-      x: 49.6,
-      y: toPdfY(86.8, nameSize),
+      x: 55.7,
+      y: 199.4,
       size: nameSize,
       font: fontBold,
       color: tealColor,
     });
 
-    // 3. Program intro
+    // 3. Program intro (8 pt Regular, matching original template)
     const duration = cert.internshipDuration || '3 - months';
     const introText = `For Successful Completion Of ${duration} Course & Training Program in`;
     page.drawText(introText, {
-      x: 49.6,
-      y: toPdfY(103.2, 8),
+      x: 56.5,
+      y: 188.8,
       size: 8,
       font: fontRegular,
       color: blackColor,
     });
 
-    // 4. Course / Training Program Name
+    // 4. Course / Training Program Name (11.5 pt Bold, matching original template)
     const course = cert.designation || 'Python Basics';
     page.drawText(course, {
-      x: 49.6,
-      y: toPdfY(113.8, 11.5),
+      x: 56.5,
+      y: 174.5,
       size: 11.5,
       font: fontBold,
       color: blackColor,
     });
 
-    // 5. Description / Content Body
+    // 5. Description / Content Body (7 pt Regular, line height 9.5 pt, matching original template)
     const effectiveBody =
       (cert.contentBody && cert.contentBody.trim()) ||
       'The participant has completed the prescribed course curriculum covering relevant concepts, tools, and practical learning activities as applicable to the program. Well done!';
     const bodyLines = wrapTextToLines(effectiveBody, 215, fontRegular, 7);
-    let curBodyY = 127.9;
-    const lineHeight = bodyLines.length > 5 ? 8.2 : 9.3;
+    let curBodyY = 164.7;
     for (const line of bodyLines) {
       if (line && line.trim()) {
         page.drawText(line, {
-          x: 57.6,
-          y: toPdfY(curBodyY, 7),
+          x: 57.2,
+          y: curBodyY,
           size: 7,
           font: fontRegular,
           color: blackColor,
         });
       }
-      curBodyY += lineHeight;
+      curBodyY -= 9.5;
     }
 
-    // 6. Dates & Certificate Number
+    // 6. Dates & Certificate Number (6 pt Bold in Teal #188a87, bottom-left)
     const formattedStart = formatDateToIndianStandard(cert.startDate);
     const formattedEnd = formatDateToIndianStandard(cert.endDate);
     page.drawText(`Start Date :- ${formattedStart}`, {
-      x: 57.6,
-      y: toPdfY(210.9, 6),
+      x: 57.2,
+      y: 81.4,
       size: 6,
       font: fontBold,
       color: tealColor,
     });
     page.drawText(`End Date :- ${formattedEnd}`, {
-      x: 57.6,
-      y: toPdfY(218.8, 6),
+      x: 57.2,
+      y: 73.9,
       size: 6,
       font: fontBold,
       color: tealColor,
     });
     page.drawText(`Certificate No. :- ${cert.certificateNumber}`, {
-      x: 57.6,
-      y: toPdfY(226.8, 6),
+      x: 57.2,
+      y: 65.9,
       size: 6,
       font: fontBold,
       color: tealColor,
     });
 
-    // 7. Director Name & Title
+    // 7. Director Name, Teal Separator Line & Designation (bottom-center)
     const director = cert.signatoryName || 'Anirudh Hatwar';
     page.drawText(director, {
-      x: 219.8,
-      y: toPdfY(212.7, 10.6),
-      size: 10.6,
+      x: 219.9,
+      y: 78.2,
+      size: 10.5,
       font: fontBold,
       color: tealColor,
     });
+
+    // Original teal separator line between Director name and designation
+    page.drawLine({
+      start: { x: 220, y: 75.5 },
+      end: { x: 287, y: 75.5 },
+      thickness: 0.8,
+      color: tealColor,
+    });
+
     page.drawText(cert.signatoryRole || 'Director', {
-      x: 244.8,
-      y: toPdfY(224.8, 8),
+      x: 245.5,
+      y: 67.7,
       size: 8,
       font: fontBold,
       color: tealColor,
@@ -690,7 +702,7 @@ export async function generateCosmosDigitalCertificatePdf(
         const sigImg = await pdfDoc.embedPng(sigBuffer);
         page.drawImage(sigImg, {
           x: 226,
-          y: toPdfY(206, 26),
+          y: 84,
           width: 48,
           height: 26,
         });
@@ -699,42 +711,44 @@ export async function generateCosmosDigitalCertificatePdf(
       }
     }
 
-    // 9. QR Code in right-side teal vertical ribbon with crisp SCAN TO VERIFY
-    const effectiveBaseUrl = resolveEffectiveBaseUrl(publicBaseUrl);
-    const verificationUrl = `${effectiveBaseUrl}/verify/${cert.verificationId}`;
-    const qrBuffer = await generateQrPngBuffer(verificationUrl, 200);
-    const qrImg = await pdfDoc.embedPng(qrBuffer);
+    // 9. QR Code in right-side teal vertical ribbon (between green lines x=314.88 and x=354.24)
+    // Exact position matching user's red-marked reference area above circular logo
+    const ribbonCenterX = 334.56;
+    const cardSize = 34;
+    const qrSize = 31;
+    const cardX = ribbonCenterX - cardSize / 2; // 317.56 pt (clear of left green line 314.88)
+    const cardY = 194.5; // clear of top and well above circular logo at y=115.6
 
-    const ribbonCenterX = 363;
-    const qrSize = 56;
-    const qrX = ribbonCenterX - qrSize / 2;
-    const qrY = height - 120;
-
-    // Clean, crisp white card backing for high contrast without irregular shapes
+    // Clean white backing card for optimal camera scannability
     page.drawRectangle({
-      x: qrX - 2,
-      y: qrY - 2,
-      width: qrSize + 4,
-      height: qrSize + 4,
+      x: cardX,
+      y: cardY,
+      width: cardSize,
+      height: cardSize,
       color: rgb(1, 1, 1),
     });
 
+    const effectiveBaseUrl = resolveEffectiveBaseUrl(publicBaseUrl);
+    const verificationUrl = `${effectiveBaseUrl}/verify/${cert.verificationId}`;
+    const qrBuffer = await generateQrPngBuffer(verificationUrl, 240);
+    const qrImg = await pdfDoc.embedPng(qrBuffer);
+
     page.drawImage(qrImg, {
-      x: qrX,
-      y: qrY,
+      x: ribbonCenterX - qrSize / 2,
+      y: cardY + (cardSize - qrSize) / 2,
       width: qrSize,
       height: qrSize,
     });
 
-    // SCAN TO VERIFY label below QR code
+    // Crisp white SCAN TO VERIFY label below QR code inside ribbon
     const scanLabel = 'SCAN TO VERIFY';
-    const labelWidth = fontBold.widthOfTextAtSize(scanLabel, 5.5);
+    const labelWidth = fontBold.widthOfTextAtSize(scanLabel, 4.5);
     page.drawText(scanLabel, {
       x: ribbonCenterX - labelWidth / 2,
-      y: qrY - 9,
-      size: 5.5,
+      y: cardY - 7.5,
+      size: 4.5,
       font: fontBold,
-      color: rgb(1, 1, 1), // Crisp white text on teal ribbon
+      color: rgb(1, 1, 1),
     });
   } else {
     // -----------------------------------------------------------------
