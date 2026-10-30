@@ -510,11 +510,13 @@ export async function generateCertificatePdf(
   };
 }
 
+const COSMOS_DIGITAL_BASE_PDF = path.join(TEMPLATES_DIR, 'cosmos-digital-base.pdf');
 const COSMOS_DIGITAL_BG = path.join(TEMPLATES_DIR, 'cosmos-digital-bg.png');
 const COSMOS_DIGITAL_LOGO = path.join(TEMPLATES_DIR, 'cosmos-digital-logo.png');
 
 /**
  * Generates a Cosmos Digital Certificate PDF with dynamic QR verification and director signature.
+ * Faithfully preserves the original master template from Sample CD CERTIFICATE.docx.
  */
 export async function generateCosmosDigitalCertificatePdf(
   cert: Certificate,
@@ -524,163 +526,341 @@ export async function generateCosmosDigitalCertificatePdf(
     fs.mkdirSync(STORAGE_DIR, { recursive: true });
   }
 
-  // Create document in Letter Landscape (792 x 612 pt) matching sample
-  const width = 792;
-  const height = 612;
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([width, height]);
+  let pdfDoc: PDFDocument;
+  let page: any;
+  let width: number;
+  let height: number;
 
-  // 1. Draw high-resolution Cosmos Digital background art
-  if (fs.existsSync(COSMOS_DIGITAL_BG)) {
-    const bgBytes = fs.readFileSync(COSMOS_DIGITAL_BG);
-    const bgImg = await pdfDoc.embedPng(bgBytes);
-    page.drawImage(bgImg, { x: 0, y: 0, width, height });
+  if (fs.existsSync(COSMOS_DIGITAL_BASE_PDF)) {
+    const templateBytes = fs.readFileSync(COSMOS_DIGITAL_BASE_PDF);
+    pdfDoc = await PDFDocument.load(templateBytes);
+    page = pdfDoc.getPage(0);
+    const size = page.getSize();
+    width = size.width;
+    height = size.height;
   } else {
-    page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.99, 1.0) });
-  }
+    // Fallback if base PDF is not found
+    width = 792;
+    height = 612;
+    pdfDoc = await PDFDocument.create();
+    page = pdfDoc.addPage([width, height]);
 
-  // 2. Draw Cosmos Digital 3D logo
-  if (fs.existsSync(COSMOS_DIGITAL_LOGO)) {
-    try {
-      const logoBytes = fs.readFileSync(COSMOS_DIGITAL_LOGO);
-      const logoImg = await pdfDoc.embedPng(logoBytes);
-      page.drawImage(logoImg, { x: 75, y: height - 102, width: 130, height: 46 });
-    } catch {}
+    if (fs.existsSync(COSMOS_DIGITAL_BG)) {
+      const bgBytes = fs.readFileSync(COSMOS_DIGITAL_BG);
+      const bgImg = await pdfDoc.embedPng(bgBytes);
+      page.drawImage(bgImg, { x: 0, y: 0, width, height });
+    } else {
+      page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.99, 1.0) });
+    }
+
+    if (fs.existsSync(COSMOS_DIGITAL_LOGO)) {
+      try {
+        const logoBytes = fs.readFileSync(COSMOS_DIGITAL_LOGO);
+        const logoImg = await pdfDoc.embedPng(logoBytes);
+        page.drawImage(logoImg, { x: width - 180, y: 40, width: 100, height: 44 });
+      } catch {}
+    }
   }
 
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  // 3. Certificate Title
-  const titleText = (cert.certificateType || 'CERTIFICATE OF COMPLETION').toUpperCase();
-  page.drawText(titleText, {
-    x: 75,
-    y: height - 138,
-    size: 15,
-    font: fontBold,
-    color: rgb(0.04, 0.20, 0.35),
-  });
+  if (width < 500) {
+    // -----------------------------------------------------------------
+    // ORIGINAL COSMOS DIGITAL MASTER DESIGN (419.52 x 297.96 pt)
+    // -----------------------------------------------------------------
+    const toPdfY = (pyY: number, fontSize = 10) => height - pyY - fontSize * 0.8;
+    const tealColor = rgb(24 / 255, 138 / 255, 135 / 255); // #188a87
+    const blackColor = rgb(0, 0, 0);
 
-  // 4. Student Full Name (in Teal #188A87)
-  let nameSize = 24;
-  if (cert.recipientName.length > 25) nameSize = 19;
-  if (cert.recipientName.length > 35) nameSize = 16;
-  page.drawText(cert.recipientName, {
-    x: 75,
-    y: height - 188,
-    size: nameSize,
-    font: fontBold,
-    color: rgb(0.09, 0.54, 0.53),
-  });
-
-  // 5. Program intro
-  const duration = cert.internshipDuration || '3 - months';
-  page.drawText(`For Successful Completion Of ${duration} Course & Training Program in`, {
-    x: 75,
-    y: height - 216,
-    size: 11.5,
-    font: fontRegular,
-    color: rgb(0.2, 0.25, 0.3),
-  });
-
-  // 6. Course / Training Program Name
-  const course = cert.designation || 'Python Basics';
-  page.drawText(course, {
-    x: 75,
-    y: height - 245,
-    size: 17,
-    font: fontBold,
-    color: rgb(0.05, 0.15, 0.25),
-  });
-
-  // 7. Course Description / Content Body
-  const effectiveBody =
-    (cert.contentBody && cert.contentBody.trim()) ||
-    'The participant has completed the prescribed course curriculum covering relevant concepts, tools, and practical learning activities as applicable to the program. Well done!';
-  const bodyLines = wrapTextToLines(effectiveBody, 460, fontRegular, 9.5);
-  bodyLines.slice(0, 4).forEach((line, idx) => {
-    page.drawText(line, {
-      x: 75,
-      y: height - 275 - idx * 13,
-      size: 9.5,
-      font: fontRegular,
-      color: rgb(0.25, 0.3, 0.38),
+    // 1. Certificate Title Heading
+    const titleText = (cert.certificateType || 'CERTIFICATE OF COMPLETION').toUpperCase();
+    page.drawText(titleText, {
+      x: 49.6,
+      y: toPdfY(71.7, 12),
+      size: 12,
+      font: fontBold,
+      color: blackColor,
     });
-  });
 
-  // 8. Dates & Certificate Number
-  const formattedStart = formatDateToIndianStandard(cert.startDate);
-  const formattedEnd = formatDateToIndianStandard(cert.endDate);
-  page.drawText(
-    `Start Date :- ${formattedStart}   End Date :- ${formattedEnd}   Certificate No. :- ${cert.certificateNumber}`,
-    {
+    // 2. Student Full Name (in Teal #188a87)
+    let nameSize = 14;
+    if (cert.recipientName.length > 25) nameSize = 12;
+    if (cert.recipientName.length > 35) nameSize = 10.5;
+    page.drawText(cert.recipientName, {
+      x: 49.6,
+      y: toPdfY(86.8, nameSize),
+      size: nameSize,
+      font: fontBold,
+      color: tealColor,
+    });
+
+    // 3. Program intro
+    const duration = cert.internshipDuration || '3 - months';
+    const introText = `For Successful Completion Of ${duration} Course & Training Program in`;
+    page.drawText(introText, {
+      x: 49.6,
+      y: toPdfY(103.2, 8),
+      size: 8,
+      font: fontRegular,
+      color: blackColor,
+    });
+
+    // 4. Course / Training Program Name
+    const course = cert.designation || 'Python Basics';
+    page.drawText(course, {
+      x: 49.6,
+      y: toPdfY(113.8, 11.5),
+      size: 11.5,
+      font: fontBold,
+      color: blackColor,
+    });
+
+    // 5. Description / Content Body
+    const effectiveBody =
+      (cert.contentBody && cert.contentBody.trim()) ||
+      'The participant has completed the prescribed course curriculum covering relevant concepts, tools, and practical learning activities as applicable to the program. Well done!';
+    const bodyLines = wrapTextToLines(effectiveBody, 215, fontRegular, 7);
+    let curBodyY = 127.9;
+    const lineHeight = bodyLines.length > 5 ? 8.2 : 9.3;
+    for (const line of bodyLines) {
+      if (line && line.trim()) {
+        page.drawText(line, {
+          x: 57.6,
+          y: toPdfY(curBodyY, 7),
+          size: 7,
+          font: fontRegular,
+          color: blackColor,
+        });
+      }
+      curBodyY += lineHeight;
+    }
+
+    // 6. Dates & Certificate Number
+    const formattedStart = formatDateToIndianStandard(cert.startDate);
+    const formattedEnd = formatDateToIndianStandard(cert.endDate);
+    page.drawText(`Start Date :- ${formattedStart}`, {
+      x: 57.6,
+      y: toPdfY(210.9, 6),
+      size: 6,
+      font: fontBold,
+      color: tealColor,
+    });
+    page.drawText(`End Date :- ${formattedEnd}`, {
+      x: 57.6,
+      y: toPdfY(218.8, 6),
+      size: 6,
+      font: fontBold,
+      color: tealColor,
+    });
+    page.drawText(`Certificate No. :- ${cert.certificateNumber}`, {
+      x: 57.6,
+      y: toPdfY(226.8, 6),
+      size: 6,
+      font: fontBold,
+      color: tealColor,
+    });
+
+    // 7. Director Name & Title
+    const director = cert.signatoryName || 'Anirudh Hatwar';
+    page.drawText(director, {
+      x: 219.8,
+      y: toPdfY(212.7, 10.6),
+      size: 10.6,
+      font: fontBold,
+      color: tealColor,
+    });
+    page.drawText(cert.signatoryRole || 'Director', {
+      x: 244.8,
+      y: toPdfY(224.8, 8),
+      size: 8,
+      font: fontBold,
+      color: tealColor,
+    });
+
+    // 8. Director Digital Signature directly above Anirudh Hatwar
+    let sigBuffer: Buffer | null = null;
+    if (fs.existsSync(SIGNATURE_FILE)) {
+      sigBuffer = fs.readFileSync(SIGNATURE_FILE);
+    } else if (fs.existsSync(FALLBACK_SIGNATURE_SOURCE)) {
+      sigBuffer = fs.readFileSync(FALLBACK_SIGNATURE_SOURCE);
+    }
+    if (sigBuffer) {
+      try {
+        const sigImg = await pdfDoc.embedPng(sigBuffer);
+        page.drawImage(sigImg, {
+          x: 226,
+          y: toPdfY(206, 26),
+          width: 48,
+          height: 26,
+        });
+      } catch (err) {
+        console.warn('[Cosmos Digital] Could not embed director signature:', err);
+      }
+    }
+
+    // 9. QR Code in right-side teal vertical ribbon with crisp SCAN TO VERIFY
+    const effectiveBaseUrl = resolveEffectiveBaseUrl(publicBaseUrl);
+    const verificationUrl = `${effectiveBaseUrl}/verify/${cert.verificationId}`;
+    const qrBuffer = await generateQrPngBuffer(verificationUrl, 200);
+    const qrImg = await pdfDoc.embedPng(qrBuffer);
+
+    const ribbonCenterX = 363;
+    const qrSize = 56;
+    const qrX = ribbonCenterX - qrSize / 2;
+    const qrY = height - 120;
+
+    // Clean, crisp white card backing for high contrast without irregular shapes
+    page.drawRectangle({
+      x: qrX - 2,
+      y: qrY - 2,
+      width: qrSize + 4,
+      height: qrSize + 4,
+      color: rgb(1, 1, 1),
+    });
+
+    page.drawImage(qrImg, {
+      x: qrX,
+      y: qrY,
+      width: qrSize,
+      height: qrSize,
+    });
+
+    // SCAN TO VERIFY label below QR code
+    const scanLabel = 'SCAN TO VERIFY';
+    const labelWidth = fontBold.widthOfTextAtSize(scanLabel, 5.5);
+    page.drawText(scanLabel, {
+      x: ribbonCenterX - labelWidth / 2,
+      y: qrY - 9,
+      size: 5.5,
+      font: fontBold,
+      color: rgb(1, 1, 1), // Crisp white text on teal ribbon
+    });
+  } else {
+    // -----------------------------------------------------------------
+    // FALLBACK 792x612 PLACEMENT
+    // -----------------------------------------------------------------
+    const titleText = (cert.certificateType || 'CERTIFICATE OF COMPLETION').toUpperCase();
+    page.drawText(titleText, {
       x: 75,
-      y: 115,
-      size: 9.5,
+      y: height - 138,
+      size: 15,
+      font: fontBold,
+      color: rgb(0.04, 0.20, 0.35),
+    });
+
+    let nameSize = 24;
+    if (cert.recipientName.length > 25) nameSize = 19;
+    if (cert.recipientName.length > 35) nameSize = 16;
+    page.drawText(cert.recipientName, {
+      x: 75,
+      y: height - 188,
+      size: nameSize,
       font: fontBold,
       color: rgb(0.09, 0.54, 0.53),
-    }
-  );
+    });
 
-  // 9. Director Name & Title
-  const director = cert.signatoryName || 'Anirudh Hatwar';
-  page.drawText(director, {
-    x: 430,
-    y: 120,
-    size: 11,
-    font: fontBold,
-    color: rgb(0.1, 0.1, 0.1),
-  });
-  page.drawText(cert.signatoryRole || 'Director', {
-    x: 430,
-    y: 105,
-    size: 9.5,
-    font: fontRegular,
-    color: rgb(0.4, 0.4, 0.4),
-  });
+    const duration = cert.internshipDuration || '3 - months';
+    page.drawText(`For Successful Completion Of ${duration} Course & Training Program in`, {
+      x: 75,
+      y: height - 216,
+      size: 11.5,
+      font: fontRegular,
+      color: rgb(0.2, 0.25, 0.3),
+    });
 
-  // 10. Director Digital Signature
-  let sigBuffer: Buffer | null = null;
-  if (fs.existsSync(SIGNATURE_FILE)) {
-    sigBuffer = fs.readFileSync(SIGNATURE_FILE);
-  } else if (fs.existsSync(FALLBACK_SIGNATURE_SOURCE)) {
-    sigBuffer = fs.readFileSync(FALLBACK_SIGNATURE_SOURCE);
-  }
-  if (sigBuffer) {
-    try {
-      const embeddedSig = await pdfDoc.embedPng(sigBuffer);
-      page.drawImage(embeddedSig, {
-        x: 420,
-        y: 135,
-        width: 80,
-        height: 50,
+    const course = cert.designation || 'Python Basics';
+    page.drawText(course, {
+      x: 75,
+      y: height - 245,
+      size: 17,
+      font: fontBold,
+      color: rgb(0.05, 0.15, 0.25),
+    });
+
+    const effectiveBody =
+      (cert.contentBody && cert.contentBody.trim()) ||
+      'The participant has completed the prescribed course curriculum covering relevant concepts, tools, and practical learning activities as applicable to the program. Well done!';
+    const bodyLines = wrapTextToLines(effectiveBody, 460, fontRegular, 9.5);
+    bodyLines.slice(0, 4).forEach((line, idx) => {
+      page.drawText(line, {
+        x: 75,
+        y: height - 275 - idx * 13,
+        size: 9.5,
+        font: fontRegular,
+        color: rgb(0.25, 0.3, 0.38),
       });
-    } catch {}
+    });
+
+    const formattedStart = formatDateToIndianStandard(cert.startDate);
+    const formattedEnd = formatDateToIndianStandard(cert.endDate);
+    page.drawText(
+      `Start Date :- ${formattedStart}   End Date :- ${formattedEnd}   Certificate No. :- ${cert.certificateNumber}`,
+      {
+        x: 75,
+        y: 115,
+        size: 9.5,
+        font: fontBold,
+        color: rgb(0.09, 0.54, 0.53),
+      }
+    );
+
+    const director = cert.signatoryName || 'Anirudh Hatwar';
+    page.drawText(director, {
+      x: 430,
+      y: 120,
+      size: 11,
+      font: fontBold,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    page.drawText(cert.signatoryRole || 'Director', {
+      x: 430,
+      y: 105,
+      size: 9.5,
+      font: fontRegular,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+
+    let sigBuffer: Buffer | null = null;
+    if (fs.existsSync(SIGNATURE_FILE)) {
+      sigBuffer = fs.readFileSync(SIGNATURE_FILE);
+    } else if (fs.existsSync(FALLBACK_SIGNATURE_SOURCE)) {
+      sigBuffer = fs.readFileSync(FALLBACK_SIGNATURE_SOURCE);
+    }
+    if (sigBuffer) {
+      try {
+        const embeddedSig = await pdfDoc.embedPng(sigBuffer);
+        page.drawImage(embeddedSig, {
+          x: 420,
+          y: 135,
+          width: 80,
+          height: 50,
+        });
+      } catch {}
+    }
+
+    const effectiveBaseUrl = resolveEffectiveBaseUrl(publicBaseUrl);
+    const verificationUrl = `${effectiveBaseUrl}/verify/${cert.verificationId}`;
+    const qrBuffer = await generateQrPngBuffer(verificationUrl, 260);
+    const embeddedQr = await pdfDoc.embedPng(qrBuffer);
+
+    page.drawRectangle({
+      x: 597,
+      y: 428,
+      width: 72,
+      height: 72,
+      color: rgb(1, 1, 1),
+      borderColor: rgb(0.09, 0.54, 0.53),
+      borderWidth: 1,
+    });
+
+    page.drawImage(embeddedQr, {
+      x: 601,
+      y: 432,
+      width: 64,
+      height: 64,
+    });
   }
-
-  // 11. Dynamic QR Code in top right ribbon
-  const effectiveBaseUrl = resolveEffectiveBaseUrl(publicBaseUrl);
-  const verificationUrl = `${effectiveBaseUrl}/verify/${cert.verificationId}`;
-  const qrBuffer = await generateQrPngBuffer(verificationUrl, 260);
-  const embeddedQr = await pdfDoc.embedPng(qrBuffer);
-
-  // Protective clear card inside the ribbon
-  page.drawRectangle({
-    x: 597,
-    y: 428,
-    width: 72,
-    height: 72,
-    color: rgb(1, 1, 1),
-    borderColor: rgb(0.09, 0.54, 0.53),
-    borderWidth: 1,
-  });
-
-  page.drawImage(embeddedQr, {
-    x: 601,
-    y: 432,
-    width: 64,
-    height: 64,
-  });
 
   const cleanNum = cert.certificateNumber.replace(/[^a-zA-Z0-9]/g, '');
   const relativeFileName = `${cleanNum}.pdf`;

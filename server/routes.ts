@@ -506,7 +506,11 @@ apiRouter.post('/certificates/:id/regenerate-pdf', requireAdmin, async (req: Req
       return;
     }
     const baseUrl = getPublicBaseUrl(req);
-    await generateCertificatePdf(cert, baseUrl);
+    if (cert.documentType === 'COSMOS_DIGITAL_CERTIFICATE') {
+      await generateCosmosDigitalCertificatePdf(cert, baseUrl);
+    } else {
+      await generateCertificatePdf(cert, baseUrl);
+    }
     const fullVerificationUrl = `${baseUrl.replace(/\/$/, '')}${cert.verificationPath}`;
     const qrDataUrl = await generateQrDataUrl(fullVerificationUrl, 300);
 
@@ -773,7 +777,11 @@ apiRouter.get('/download/:certificateNumber', async (req: Request, res: Response
       const cert = (await getCertificateByNumber(`#${cleanNum}`)) || (await getCertificateByNumber(cleanNum));
       if (cert) {
         const baseUrl = getPublicBaseUrl(req);
-        await generateCertificatePdf(cert, baseUrl);
+        if (cert.documentType === 'COSMOS_DIGITAL_CERTIFICATE') {
+          await generateCosmosDigitalCertificatePdf(cert, baseUrl);
+        } else {
+          await generateCertificatePdf(cert, baseUrl);
+        }
       }
     }
 

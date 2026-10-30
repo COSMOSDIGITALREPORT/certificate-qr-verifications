@@ -132,6 +132,10 @@ test('generateCosmosDigitalCertificatePdf generates valid PDF with QR and signat
 
   const loadedPdf = await PDFDocument.load(result.pdfBuffer);
   assert.equal(loadedPdf.getPageCount(), 1, 'Must have 1 page');
+  const page = loadedPdf.getPage(0);
+  const size = page.getSize();
+  assert.ok(Math.abs(size.width - 419.52) < 2, 'Page width must match original master sample (419.52 pt)');
+  assert.ok(Math.abs(size.height - 297.96) < 2, 'Page height must match original master sample (297.96 pt)');
 
   // Clean up test file
   if (fs.existsSync(result.fullPath)) {
