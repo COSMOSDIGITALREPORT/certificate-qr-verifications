@@ -13,6 +13,8 @@ import { VerificationPage } from './components/VerificationPage.js';
 import { TemplateSettings } from './components/TemplateSettings.js';
 import { CertificateDetailModal } from './components/CertificateDetailModal.js';
 import { RevokeModal } from './components/RevokeModal.js';
+import { DeleteModal } from './components/DeleteModal.js';
+import { CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import { api } from './services/api.js';
 import { AdminUser, Certificate } from './types/index.js';
 
@@ -24,6 +26,19 @@ export default function App() {
   // Modals state
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
   const [certToRevoke, setCertToRevoke] = useState<Certificate | null>(null);
+  const [certToDelete, setCertToDelete] = useState<Certificate | null>(null);
+
+  // Global UI notifications and live refresh triggers
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Auto-dismiss notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Verification Portal state
   const [activeVerificationId, setActiveVerificationId] = useState<string>('cg-26832-7a8e');
@@ -135,6 +150,33 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Global Notification Banner */}
+        {notification && (
+          <div
+            className={`mb-5 p-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold shadow-xs transition-all ${
+              notification.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {notification.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span>{notification.message}</span>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className="p-1 rounded-md hover:bg-black/5 cursor-pointer text-slate-500"
+              title="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {!authChecked ? (
           <div className="min-h-[50vh] flex items-center justify-center">
             <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin"></div>
@@ -156,13 +198,15 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onOpenDetail={setSelectedCert}
                 onOpenRevoke={setCertToRevoke}
+                onOpenDelete={setCertToDelete}
+                refreshTrigger={refreshTrigger}
               />
             )}
 
             {currentTab === 'generate' && (
               <CertificateForm
                 onSuccess={() => {
-                  // The form presents its own comprehensive success screen
+                  setRefreshTrigger((prev) => prev + 1);
                 }}
                 onOpenVerification={(verId) => {
                   setActiveVerificationId(verId);
@@ -175,10 +219,12 @@ export default function App() {
               <CertificateTable
                 onOpenDetail={setSelectedCert}
                 onOpenRevoke={setCertToRevoke}
+                onOpenDelete={setCertToDelete}
                 onOpenVerification={(verId) => {
                   setActiveVerificationId(verId);
                   setCurrentTab('verify');
                 }}
+                refreshTrigger={refreshTrigger}
               />
             )}
 
@@ -200,6 +246,10 @@ export default function App() {
           setSelectedCert(null);
           setCertToRevoke(cert);
         }}
+        onOpenDelete={(cert) => {
+          setSelectedCert(null);
+          setCertToDelete(cert);
+        }}
       />
 
       <RevokeModal
@@ -207,6 +257,25 @@ export default function App() {
         onClose={() => setCertToRevoke(null)}
         onRevokedSuccess={(updated) => {
           setSelectedCert(updated);
+          setRefreshTrigger((prev) => prev + 1);
+          setNotification({
+            type: 'success',
+            message: `Certificate ${updated.certificateNumber} (${updated.recipientName}) has been marked as REVOKED.`,
+          });
+        }}
+      />
+
+      <DeleteModal
+        certificate={certToDelete}
+        onClose={() => setCertToDelete(null)}
+        onDeletedSuccess={(deleted) => {
+          setCertToDelete(null);
+          setSelectedCert(null);
+          setRefreshTrigger((prev) => prev + 1);
+          setNotification({
+            type: 'success',
+            message: `Certificate ${deleted.certificateNumber} (${deleted.recipientName}) was permanently deleted from the database and storage.`,
+          });
         }}
       />
 

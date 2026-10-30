@@ -17,6 +17,7 @@ import {
   insertCertificate,
   updateCertificate,
   revokeCertificate,
+  deleteCertificate,
   getDashboardMetrics,
   getAdminByUsername,
   getMongoHealth,
@@ -470,6 +471,64 @@ apiRouter.put('/certificates/:id', requireAdmin, async (req: Request, res: Respo
     res.json({ success: true, certificate: updated });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update certificate' });
+  }
+});
+
+// Authorized permanent deletion endpoint
+apiRouter.delete('/certificates/:id', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const cert = await getCertificateById(req.params.id);
+    if (!cert) {
+      res.status(404).json({ error: 'Certificate not found' });
+      return;
+    }
+
+    const success = await deleteCertificate(req.params.id);
+    if (!success) {
+      res.status(500).json({ error: 'Failed to permanently delete certificate' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: `Certificate ${cert.certificateNumber} (${cert.recipientName}) has been permanently deleted.`,
+      deletedCertificate: {
+        id: cert.id,
+        certificateNumber: cert.certificateNumber,
+        recipientName: cert.recipientName,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Failed to permanently delete certificate' });
+  }
+});
+
+// Also support POST /certificates/:id/delete for proxies/clients with restricted HTTP DELETE verbs
+apiRouter.post('/certificates/:id/delete', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const cert = await getCertificateById(req.params.id);
+    if (!cert) {
+      res.status(404).json({ error: 'Certificate not found' });
+      return;
+    }
+
+    const success = await deleteCertificate(req.params.id);
+    if (!success) {
+      res.status(500).json({ error: 'Failed to permanently delete certificate' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: `Certificate ${cert.certificateNumber} (${cert.recipientName}) has been permanently deleted.`,
+      deletedCertificate: {
+        id: cert.id,
+        certificateNumber: cert.certificateNumber,
+        recipientName: cert.recipientName,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Failed to permanently delete certificate' });
   }
 });
 

@@ -15,6 +15,7 @@ import {
   ExternalLink,
   RefreshCw,
   QrCode,
+  Trash2,
 } from 'lucide-react';
 import { api, getCertificateDownloadUrl } from '../services/api.js';
 import { DashboardMetrics, Certificate } from '../types/index.js';
@@ -24,11 +25,16 @@ interface DashboardOverviewProps {
   onNavigate: (tab: string, certId?: string) => void;
   onOpenDetail: (cert: Certificate) => void;
   onOpenRevoke: (cert: Certificate) => void;
+  onOpenDelete?: (cert: Certificate) => void;
+  refreshTrigger?: number;
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onNavigate,
   onOpenDetail,
+  onOpenRevoke,
+  onOpenDelete,
+  refreshTrigger,
 }) => {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalIssued: 0,
@@ -57,7 +63,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [refreshTrigger]);
 
   return (
     <div className="space-y-6">
@@ -248,6 +254,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
+                        {onOpenDelete && (
+                          <button
+                            onClick={() => onOpenDelete(cert)}
+                            className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                            title="Permanently Delete Certificate"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

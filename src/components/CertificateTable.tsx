@@ -16,6 +16,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import { api, getCertificateDownloadUrl } from '../services/api.js';
 import { Certificate } from '../types/index.js';
@@ -24,13 +25,17 @@ import { formatDateHumanReadable, formatDateToIndianStandard } from '../../serve
 interface CertificateTableProps {
   onOpenDetail: (cert: Certificate) => void;
   onOpenRevoke: (cert: Certificate) => void;
+  onOpenDelete: (cert: Certificate) => void;
   onOpenVerification: (verificationId: string) => void;
+  refreshTrigger?: number;
 }
 
 export const CertificateTable: React.FC<CertificateTableProps> = ({
   onOpenDetail,
   onOpenRevoke,
+  onOpenDelete,
   onOpenVerification,
+  refreshTrigger,
 }) => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [total, setTotal] = useState(0);
@@ -62,7 +67,7 @@ export const CertificateTable: React.FC<CertificateTableProps> = ({
 
   useEffect(() => {
     loadCertificates();
-  }, [search, statusFilter, page]);
+  }, [search, statusFilter, page, refreshTrigger]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -241,13 +246,22 @@ export const CertificateTable: React.FC<CertificateTableProps> = ({
                             <button
                               onClick={() => onOpenRevoke(cert)}
                               title="Revoke Certificate"
-                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors cursor-pointer"
                             >
                               <XCircle className="w-3.5 h-3.5" />
                             </button>
                           ) : (
                             <span className="text-[10px] text-rose-600 font-semibold italic px-1">Revoked</span>
                           )}
+
+                          {/* Permanent Delete */}
+                          <button
+                            onClick={() => onOpenDelete(cert)}
+                            title="Permanently Delete Certificate"
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
 
                         </div>
                       </td>

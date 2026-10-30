@@ -198,6 +198,16 @@ export const api = {
     });
   },
 
+  async deleteCertificate(id: string): Promise<{
+    success: boolean;
+    message: string;
+    deletedCertificate?: { id: string; certificateNumber: string; recipientName: string };
+  }> {
+    return fetchJson(`/api/certificates/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Public Verification
   async verifyCertificate(verificationId: string): Promise<PublicVerificationResult> {
     const fullUrl = `${API_BASE_URL}/api/verify/${encodeURIComponent(verificationId)}`;

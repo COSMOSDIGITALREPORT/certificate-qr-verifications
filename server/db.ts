@@ -22,6 +22,7 @@ import {
   insertCertificateMongo,
   updateCertificateMongo,
   revokeCertificateMongo,
+  deleteCertificateMongo,
   getDashboardMetricsMongo,
   getAdminByUsernameMongo,
   getAdminByIdMongo,
@@ -663,6 +664,51 @@ export async function revokeCertificate(id: string, reason?: string): Promise<Ce
   }
 
   return getCertificateById(id);
+}
+
+export async function deleteCertificate(id: string): Promise<boolean> {
+  const cert = await getCertificateById(id);
+  if (!cert) return false;
+
+  const db = await getDatabase();
+
+  // 1. Delete from SQLite
+  try {
+    db.run(
+      'DELETE FROM certificates WHERE id = ? OR certificateNumber = ? OR verificationId = ?',
+      [cert.id, cert.certificateNumber, cert.verificationId]
+    );
+    saveDatabaseToDisk();
+    console.log(`[Cosmogeek SQLite] ✓ Certificate ${cert.certificateNumber} (${cert.recipientName}) permanently deleted from SQLite.`);
+  } catch (err) {
+    console.warn('[Cosmogeek SQLite] Delete failed:', err);
+  }
+
+  // 2. Delete from MongoDB Atlas
+  if (isMongoConnected()) {
+    try {
+      await deleteCertificateMongo(cert.id);
+      console.log(`[Cosmogeek MongoDB] ✓ Certificate ${cert.certificateNumber} (${cert.recipientName}) permanently deleted from MongoDB Atlas collection "students".`);
+    } catch (err) {
+      console.error('[Cosmogeek MongoDB Error] Failed to delete certificate in MongoDB Atlas:', err);
+      throw err;
+    }
+  }
+
+  // 3. Delete associated exclusive PDF from storage
+  try {
+    const cleanNum = cert.certificateNumber.replace(/[^a-zA-Z0-9]/g, '');
+    const STORAGE_DIR = path.resolve(process.cwd(), 'storage/certificates');
+    const pdfPath = path.resolve(STORAGE_DIR, `${cleanNum}.pdf`);
+    if (fs.existsSync(pdfPath) && pdfPath.startsWith(STORAGE_DIR)) {
+      fs.unlinkSync(pdfPath);
+      console.log(`[Cosmogeek Storage] ✓ Deleted certificate PDF: ${pdfPath}`);
+    }
+  } catch (fileErr) {
+    console.warn('[Cosmogeek Storage] Notice: Could not remove certificate PDF file:', fileErr);
+  }
+
+  return true;
 }
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {

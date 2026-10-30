@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Copy,
   Check,
+  Trash2,
 } from 'lucide-react';
 import { Certificate } from '../types/index.js';
 import { generateQrDataUrl } from '../../server/qr.js';
@@ -23,6 +24,7 @@ interface CertificateDetailModalProps {
   onClose: () => void;
   onOpenVerification: (verificationId: string) => void;
   onOpenRevoke: (cert: Certificate) => void;
+  onOpenDelete: (cert: Certificate) => void;
 }
 
 export const CertificateDetailModal: React.FC<CertificateDetailModalProps> = ({
@@ -30,6 +32,7 @@ export const CertificateDetailModal: React.FC<CertificateDetailModalProps> = ({
   onClose,
   onOpenVerification,
   onOpenRevoke,
+  onOpenDelete,
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -294,21 +297,35 @@ export const CertificateDetailModal: React.FC<CertificateDetailModalProps> = ({
 
           </div>
 
-          {/* Revoke option */}
-          {isValid && (
-            <div className="pt-2 text-right">
+          {/* Delete & Revoke options */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100">
+            <button
+              onClick={() => {
+                onClose();
+                onOpenDelete(certificate);
+              }}
+              className="text-xs text-rose-600 hover:text-rose-700 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer py-1"
+              title="Permanently remove certificate from MongoDB and storage"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Permanently Delete Certificate</span>
+            </button>
+
+            {isValid ? (
               <button
                 onClick={() => {
                   onClose();
                   onOpenRevoke(certificate);
                 }}
-                className="text-xs text-rose-600 hover:text-rose-700 font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-xs text-slate-500 hover:text-rose-600 font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer py-1"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
                 <span>Revoke this certificate...</span>
               </button>
-            </div>
-          )}
+            ) : (
+              <span className="text-[11px] text-rose-600 font-semibold italic">Status: Revoked</span>
+            )}
+          </div>
         </div>
 
       </div>

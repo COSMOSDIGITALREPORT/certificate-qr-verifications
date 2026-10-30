@@ -499,6 +499,22 @@ export async function revokeCertificateMongo(id: string, reason?: string): Promi
   return doc ? docToCertificate(doc) : null;
 }
 
+export async function deleteCertificateMongo(id: string): Promise<boolean> {
+  const clean = String(id || '').trim();
+  if (!clean) return false;
+
+  const result = await StudentCertificateModel.deleteOne({
+    $or: [
+      { id: clean },
+      { certificateNumber: clean },
+      { verificationId: clean },
+      ...(mongoose.Types.ObjectId.isValid(clean) ? [{ _id: clean }] : []),
+    ],
+  });
+
+  return (result.deletedCount || 0) > 0;
+}
+
 export async function getDashboardMetricsMongo(): Promise<DashboardMetrics> {
   const [totalIssued, validCertificates, revokedCertificates] = await Promise.all([
     StudentCertificateModel.countDocuments({}),
