@@ -488,7 +488,6 @@ apiRouter.post('/documents/offer-letter', requireAdmin, async (req: Request, res
     res.status(500).json({ error: err?.message || 'Failed to generate offer letter document' });
   }
 });
-});
 
 apiRouter.post('/certificates/:id/regenerate-pdf', requireAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
